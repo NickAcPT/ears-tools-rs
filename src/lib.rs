@@ -69,7 +69,7 @@ pub fn decode_ears_image(skin_bytes: &[u8]) -> EarsImageWorkspace {
         .into_iter()
         .map(|r| r.into())
         .collect();
-    
+
     EarsImageWorkspace {
         alfalfa: data,
         regions,
@@ -88,6 +88,10 @@ pub fn encode_ears_image(skin_bytes: &[u8], workspace: EarsImageWorkspace) -> Ve
         .unwrap_throw();
 
     ears_rs::alfalfa::write_alfalfa(&data, &mut image).unwrap_throw();
+
+    if data.is_empty() {
+        ears_rs::utils::strip_alpha(&mut image);
+    }
 
     let mut bytes = Vec::new();
     {
