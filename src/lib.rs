@@ -7,6 +7,15 @@ use ears_rs::alfalfa::{
 use image::ImageFormat;
 use wasm_bindgen::prelude::*;
 
+extern crate alloc;
+
+use lol_alloc::{AssumeSingleThreaded, FreeListAllocator};
+
+// SAFETY: This application is single threaded, so using AssumeSingleThreaded is allowed.
+#[global_allocator]
+static ALLOCATOR: AssumeSingleThreaded<FreeListAllocator> =
+    unsafe { AssumeSingleThreaded::new(FreeListAllocator::new()) };
+
 #[wasm_bindgen]
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct WasmEraseRegion {

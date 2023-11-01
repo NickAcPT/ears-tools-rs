@@ -13,73 +13,83 @@ wasm-bindgen = "0.2"
 
 ears-rs = { path = "../ears-rs" }
 
-image = { version = "0.24", features = ["png"]}
+image = { version = "0.24", features = ["png"], default-features = false }
 
 serde = { version = "1.0", features = ["derive"] }
 serde-wasm-bindgen = "0.6"
+
+lol_alloc = "0.4.0"
 
 [profile.release]
 opt-level = 3
 codegen-units = 1
 strip = false
 debug-assertions = false
+debug = true
 
 [profile.release.package."*"]
 opt-level = 3
 codegen-units = 1
 strip = false
 
+[package.metadata.wasm-pack.profile.release.wasm-bindgen]
+
+demangle-name-section = true
+dwarf-debug-info = true
+
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = [
-    "--roundtrip",
-    "-c",
-    "--code-folding",
-    "--merge-similar-functions",
-    "--local-cse",
-    "--memory-packing",
-    "--merge-locals",
-    "--memory-packing",
-    "--multi-memory-lowering",
-    "-lmu",
-    "--code-pushing",
-    "--licm",
-    "--const-hoisting",
-    "--ssa",
-    "--merge-blocks",
-    "--precompute-propagate",
-    "--optimize-instructions",
-    "--optimize-added-constants-propagate",
-    "-tnh",
-    "-iit",
-    "--directize",
-    "--dce",
-    "--dae-optimizing",
-    "--once-reduction",
-    "--optimize-for-js",
-    "--tuple-optimization",
-    "--unsubtyping",
-    "-Oz",
-    "--dce",
-    "--vacuum",
-    "--rse",
-    "--cfp",
-    "-uim",
-    "--precompute",
-    "--precompute-propagate",
-    "--reorder-locals",
-    "--rse",
-    "--simplify-locals",
-    "--unsubtyping",
-    "--simplify-globals-optimizing",
-    "--gufa-cast-all",
-    "--inlining-optimizing",
-    "--gufa-optimizing",
-    "-O4",
-    "--remove-unused-nonfunction-module-elements",
-    "--remove-unused-module-elements",
-    "--remove-unused-brs",
-    "--vacuum",
-    "--limit-segments",
-    "-O1",
-]
+# wasm-opt = [
+#     "-g",
+#     "--roundtrip",
+#     "-c",
+#     "--code-folding",
+#     "--merge-similar-functions",
+#     "--local-cse",
+#     "--memory-packing",
+#     "--merge-locals",
+#     "--memory-packing",
+#     "--multi-memory-lowering",
+#     "-lmu",
+#     "--code-pushing",
+#     "--licm",
+#     "--const-hoisting",
+#     "--ssa",
+#     "--merge-blocks",
+#     "--precompute-propagate",
+#     "--optimize-instructions",
+#     "--optimize-added-constants-propagate",
+#     "-tnh",
+#     "-iit",
+#     "--directize",
+#     "--dce",
+#     "--dae-optimizing",
+#     "--once-reduction",
+#     "--optimize-for-js",
+#     "--tuple-optimization",
+#     "--unsubtyping",
+#     "-Oz",
+#     "--dce",
+#     "--vacuum",
+#     "--rse",
+#     "--cfp",
+#     "-uim",
+#     "--precompute",
+#     "--precompute-propagate",
+#     "--reorder-locals",
+#     "--rse",
+#     "--simplify-locals",
+#     "--unsubtyping",
+#     "--simplify-globals-optimizing",
+#     "--gufa-cast-all",
+#     "--inlining-optimizing",
+#     "--gufa-optimizing",
+#     "-O4",
+#     "--remove-unused-nonfunction-module-elements",
+#     "--remove-unused-module-elements",
+#     "--remove-unused-brs",
+#     "--vacuum",
+#     "--limit-segments",
+#     "-O1",
+# ]
+wasm-opt = false
