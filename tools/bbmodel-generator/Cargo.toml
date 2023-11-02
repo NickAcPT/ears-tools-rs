@@ -1,5 +1,5 @@
 [package]
-name = "ears-eraser"
+name = "bbmodel-generator"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -11,14 +11,16 @@ repository.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ears-rs = { workspace = true }
-image = { workspace = true }
-thiserror = { workspace = true }
-wasm-bindgen = { workspace = true }
-serde = { workspace = true }
-serde-wasm-bindgen = { workspace = true }
 lol_alloc = { workspace = true }
+wasm-bindgen = { workspace = true }
 js-utils = { workspace = true }
+nmsr-rendering-blockbench-model-generator-experiment = { git = "https://github.com/NickAcPT/nmsr-rs", features = [
+    "ears",
+    "wasm",
+] }
+
+# This is here because some crate depends on it
+getrandom = { version = "0.2", features = ["js"] }
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = [

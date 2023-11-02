@@ -1,13 +1,14 @@
 [workspace]
 resolver = "2"
-members = ["tools/ears-eraser"]
+members = ["tools/js-utils", "tools/ears-eraser", "tools/bbmodel-generator"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 authors = ["NickAcPT"]
-homepage = ""
+homepage = "https://ears.nickac.dev/"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/NickAcPT/ears-tools-rs"
 
 [workspace.dependencies]
 ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
@@ -22,6 +23,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde-wasm-bindgen = "0.6"
 
 lol_alloc = "0.4.0"
+
+js-utils = { path = "tools/js-utils" }
 
 [profile.release]
 opt-level = 3
