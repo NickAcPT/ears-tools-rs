@@ -1,4 +1,13 @@
-use nmsr_rendering::{high_level::{pipeline::{scene::{Scene, SunInformation}, GraphicsContext}, camera::{self, CameraRotation}}, low_level::{Quat, EulerRot, Vec3}};
+use nmsr_rendering::{
+    high_level::{
+        camera::{self, CameraRotation},
+        pipeline::{
+            scene::{Scene, SunInformation},
+            GraphicsContext,
+        },
+    },
+    low_level::{EulerRot, Quat, Vec3},
+};
 
 // Rotate our orbital camera based on the mouse
 static mut MOUSE_DOWN: bool = false;
@@ -8,11 +17,11 @@ static mut LAST_Y: Option<f32> = None;
 pub fn rotate_camera(scene: &mut Scene, ctx: &GraphicsContext, yaw: f32, pitch: f32, roll: f32) {
     let camera = scene.camera_mut();
     let rotation = camera.get_rotation_as_mut();
-    
+
     rotation.yaw = yaw;
     rotation.pitch = pitch;
     rotation.roll = roll;
-    
+
     let new_sun = {
         let one_eighty_diff = (rotation.yaw.abs() - 180.0).abs();
         let yaw = if one_eighty_diff < 0.01 {
@@ -37,9 +46,8 @@ pub fn rotate_camera(scene: &mut Scene, ctx: &GraphicsContext, yaw: f32, pitch: 
 
         scene.sun_information_mut().direction = front_lighting;
     };
-    
+
     scene.update(ctx);
-    
 }
 
 pub fn handle_mouse_move(scene: &mut Scene, ctx: &GraphicsContext, x: f32, y: f32) {
@@ -48,19 +56,22 @@ pub fn handle_mouse_move(scene: &mut Scene, ctx: &GraphicsContext, x: f32, y: f3
             if let Some(last_y) = unsafe { LAST_Y } {
                 let x = x - last_x;
                 let y = y - last_y;
-                
+
                 let camera = scene.camera_mut();
-                let CameraRotation {mut yaw, mut pitch, mut roll} = &camera.get_rotation();
-                
+                let CameraRotation {
+                    mut yaw,
+                    mut pitch,
+                    mut roll,
+                } = &camera.get_rotation();
+
                 yaw += x;
                 pitch += y;
-                
+
                 rotate_camera(scene, ctx, yaw, pitch, roll);
             }
         }
-        
     }
-    
+
     unsafe {
         LAST_X.replace(x);
         LAST_Y.replace(y);
@@ -71,17 +82,21 @@ pub fn handle_mouse_down() {
 }
 
 pub fn handle_mouse_up() {
-    unsafe { MOUSE_DOWN = false };
+    unsafe {
+        MOUSE_DOWN = false;
+        LAST_X = None;
+        LAST_Y = None;
+    }
 }
 
 pub fn handle_mouse_scroll(scene: &mut Scene, ctx: &GraphicsContext, delta: f32) {
     let camera = scene.camera_mut();
-    
+
     let dist = camera.get_distance_as_mut();
-    
+
     if let Some(dist) = dist {
         *dist -= delta;
-        
+
         scene.update(ctx);
     }
 }

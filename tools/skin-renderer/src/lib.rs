@@ -24,7 +24,11 @@ use send_wrapper::SendWrapper;
 use wasm_bindgen::{prelude::wasm_bindgen, UnwrapThrowExt};
 use web_sys::{console, HtmlCanvasElement};
 use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits, RequestDeviceError};
-use winit::{event_loop::EventLoop, platform::web::WindowBuilderExtWebSys, window::WindowBuilder};
+use winit::{
+    event_loop::EventLoop,
+    platform::web::WindowBuilderExtWebSys,
+    window::WindowBuilder,
+};
 
 static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
 static mut SCENE: Option<Scene<SceneContextWrapper>> = None;
@@ -172,6 +176,10 @@ pub async fn setup_scene(
 
     let lighting = SunInformation::new(direction.into(), intensity, ambient);
 
+    let skin_image = image::load_from_memory_with_format(&skin, ImageFormat::Png)?.into_rgba8();
+
+    let ears_features = EarsParser::parse(&skin_image)?.filter(|_| model.has_ears);
+
     let mut part_context: PlayerPartProviderContext<()> = PlayerPartProviderContext {
         model: if model.is_slim {
             PlayerModel::Alex
@@ -180,17 +188,13 @@ pub async fn setup_scene(
         },
         has_hat_layer: model.has_hat_layer,
         has_layers: model.has_layers,
-        has_cape: false,
+        has_cape: ears_features.is_some_and(|f| f.cape_enabled),
         arm_rotation: 10.0,
         shadow_y_pos: None,
         shadow_is_square: false,
         armor_slots: None,
-        ears_features: None,
+        ears_features,
     };
-
-    let mut skin_image = image::load_from_memory_with_format(&skin, ImageFormat::Png)?.into_rgba8();
-
-    part_context.ears_features = EarsParser::parse(&skin_image)?.filter(|_| model.has_ears);
 
     let parts: Vec<_> = PlayerBodyPartType::iter().into_iter().collect();
 
@@ -253,15 +257,13 @@ fn add_scene_texture(
                             image::load_from_memory(cape)
                                 .expect_throw("Failed to load cape")
                                 .to_rgba8(),
-                            false,
+                            true,
                         )?;
                     }
                 }
 
                 ears_rs::utils::process_erase_regions(&mut texture)?;
-            } else if texture_type == PlayerPartEarsTextureType::Cape.into()
-                && texture_type.get_texture_size() != (texture.width(), texture.height())
-            {
+            } else if texture_type == PlayerPartEarsTextureType::Cape.into() {
                 texture = ears_rs::utils::convert_ears_cape_to_mojang_cape(texture);
             }
         }
@@ -321,17 +323,20 @@ pub fn set_camera_rotation(yaw: f32, pitch: f32, roll: f32) {
 
 #[wasm_bindgen]
 pub async fn run_event_loop(canvas: HtmlCanvasElement, size: WasmVec2) -> JsResult<()> {
+    let size = winit::dpi::PhysicalSize::new(size.0, size.1);
+    
     let window = WindowBuilder::new()
         .with_transparent(true)
-        .with_inner_size(winit::dpi::LogicalSize::new(size.0, size.1))
+        .with_inner_size(size)
         .with_canvas(Some(canvas))
         .with_focusable(true)
         .with_prevent_default(true)
+        .with_resizable(false)
         .with_decorations(false);
 
     let event_loop = EventLoop::new();
     let window = window.build(&event_loop)?;
-
+    
     event_loop.run(move |event, _, control_flow| {
         *control_flow = winit::event_loop::ControlFlow::Poll;
         match event {
@@ -340,14 +345,10 @@ pub async fn run_event_loop(canvas: HtmlCanvasElement, size: WasmVec2) -> JsResu
                     *control_flow = winit::event_loop::ControlFlow::Exit;
                 }
                 winit::event::WindowEvent::MouseInput { state, .. } => {
-                    if let Some(scene) = scene() {
-                        if let Some(context) = graphics_context() {
-                            if state == winit::event::ElementState::Pressed {
-                                mouse::handle_mouse_down();
-                            } else {
-                                mouse::handle_mouse_up();
-                            }
-                        }
+                    if state == winit::event::ElementState::Pressed {
+                        mouse::handle_mouse_down();
+                    } else {
+                        mouse::handle_mouse_up();
                     }
                 }
                 winit::event::WindowEvent::CursorMoved { position, .. } => {
@@ -376,16 +377,22 @@ pub async fn run_event_loop(canvas: HtmlCanvasElement, size: WasmVec2) -> JsResu
                         }
                     }
                 }
+                winit::event::WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                    // Revert the scale factor change
+                    new_inner_size.width = size.width as u32;
+                    new_inner_size.height = size.height as u32;
+                    
+                }
                 _ => {}
             },
             winit::event::Event::MainEventsCleared => {
                 window.request_redraw();
             }
+            
             winit::event::Event::RedrawRequested(_) => {
                 if let Some(scene) = scene() {
                     scene
                         .render(graphics_context().expect_throw("Graphics context not initialized"))
-                        .inspect_err(inspect_err)
                         .unwrap();
                 }
             }
@@ -396,6 +403,8 @@ pub async fn run_event_loop(canvas: HtmlCanvasElement, size: WasmVec2) -> JsResu
 
 #[wasm_bindgen]
 pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> JsResult<()> {
+    console_error_panic_hook::set_once();
+
     let canvas = SendWrapper::new(canvas);
 
     #[cfg(feature = "webgl")]
@@ -407,7 +416,7 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
     let limits = Limits::downlevel_defaults();
     #[cfg(feature = "webgl")]
     let limits = Limits::downlevel_webgl2_defaults();
-    
+
     let mut context = GraphicsContext::new(GraphicsContextDescriptor {
         backends: Some(backend),
         surface_provider: Box::new(|i| {
@@ -435,7 +444,7 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
                 let alpha_mode = CompositeAlphaMode::Opaque;
 
                 config.alpha_mode = alpha_mode;
-                
+
                 if let Some(surface) = context.surface.as_mut() {
                     surface.configure(&context.device, config);
                 }
@@ -448,15 +457,4 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
     }
 
     Ok(())
-}
-
-fn inspect_err<T: std::fmt::Display>(err: &T) {
-    unsafe {
-        console::error_1(&format!("{}", err).into());
-    }
-}
-fn log_dbg<T: std::fmt::Debug>(err: &T) {
-    unsafe {
-        console::error_1(&format!("{:?}", err).into());
-    }
 }
