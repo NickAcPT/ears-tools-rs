@@ -2,6 +2,6 @@
 target = "wasm32-unknown-unknown"
 rustflags = ["--cfg=web_sys_unstable_apis", "-Z", "threads=8"]
 
-#[unstable]
-#build-std = ["panic_abort", "std"]
-#build-std-features = ["panic_immediate_abort"]
+[unstable]
+build-std = ["panic_abort", "std"]
+build-std-features = ["panic_immediate_abort"]

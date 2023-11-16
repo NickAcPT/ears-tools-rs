@@ -396,8 +396,6 @@ pub async fn run_event_loop(canvas: HtmlCanvasElement, size: WasmVec2) -> JsResu
 
 #[wasm_bindgen]
 pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> JsResult<()> {
-    console_error_panic_hook::set_once();
-    
     let canvas = SendWrapper::new(canvas);
 
     #[cfg(feature = "webgl")]
