@@ -14,8 +14,8 @@ crate-type = ["cdylib", "rlib"]
 ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
 console_error_panic_hook = "*"
 wasm-bindgen = { workspace = true }
-nmsr-rendering = { path = "../../../nmsr-rs/nmsr-3d-renderer/nmsr-rendering" }
-nmsr-player-parts = { path = "../../../nmsr-rs/nmsr-3d-renderer/nmsr-player-parts" }
+nmsr-rendering = { git = "https://github.com/NickAcPT/nmsr-rs" }
+nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 # web-sys has to be locked to 0.3.64 because otherwise, wgpu breaks
 web-sys = { version = "=0.3.64", features = ["HtmlCanvasElement"] }
 # We're being spicy here by asking it to be send and sync..
