@@ -1,5 +1,7 @@
+mod mouse;
+
 use ears_rs::parser::EarsParser;
-use image::ImageFormat;
+use image::{ImageFormat, RgbaImage};
 use js_utils::JsResult;
 use nmsr_player_parts::{
     model::PlayerModel,
@@ -21,7 +23,7 @@ use nmsr_rendering::{
 use send_wrapper::SendWrapper;
 use wasm_bindgen::{prelude::wasm_bindgen, UnwrapThrowExt};
 use web_sys::{console, HtmlCanvasElement};
-use wgpu::{Backends, BlendState, Limits, CompositeAlphaMode};
+use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits, RequestDeviceError};
 use winit::{event_loop::EventLoop, platform::web::WindowBuilderExtWebSys, window::WindowBuilder};
 
 static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
@@ -115,6 +117,7 @@ impl SceneLightingSettings {
 pub struct SceneCharacterSettings {
     pub is_slim: bool,
     pub has_hat_layer: bool,
+    pub has_ears: bool,
     pub has_layers: bool,
 }
 
@@ -126,6 +129,7 @@ impl SceneCharacterSettings {
             is_slim: false,
             has_hat_layer: false,
             has_layers: false,
+            has_ears: false,
         }
     }
 }
@@ -183,14 +187,11 @@ pub async fn setup_scene(
         armor_slots: None,
         ears_features: None,
     };
-    
+
     let mut skin_image = image::load_from_memory_with_format(&skin, ImageFormat::Png)?.into_rgba8();
 
-    part_context.ears_features = EarsParser::parse(&skin_image)?;
-    
-    ears_rs::utils::process_erase_regions(&mut skin_image)?;
-    ears_rs::utils::strip_alpha(&mut skin_image);
-    
+    part_context.ears_features = EarsParser::parse(&skin_image)?.filter(|_| model.has_ears);
+
     let parts: Vec<_> = PlayerBodyPartType::iter().into_iter().collect();
 
     let mut scene: Scene<SceneContextWrapper> = Scene::new(
@@ -202,8 +203,14 @@ pub async fn setup_scene(
         &part_context,
         &parts,
     );
-    
-    scene.set_texture(graphics_context, PlayerPartTextureType::Skin, &skin_image);
+
+    add_scene_texture(
+        &mut scene,
+        &mut part_context,
+        PlayerPartTextureType::Skin,
+        skin_image,
+        true,
+    )?;
 
     unsafe {
         SCENE.replace(scene);
@@ -212,10 +219,102 @@ pub async fn setup_scene(
     Ok(())
 }
 
+fn add_scene_texture(
+    scene: &mut Scene,
+    part_context: &mut PlayerPartProviderContext,
+    texture_type: PlayerPartTextureType,
+    mut texture: RgbaImage,
+    do_ears_processing: bool,
+) -> JsResult<()> {
+    if do_ears_processing {
+        {
+            use ears_rs::alfalfa::AlfalfaDataKey;
+            use nmsr_rendering::high_level::parts::provider::ears::PlayerPartEarsTextureType;
+
+            if texture_type == PlayerPartTextureType::Skin {
+                if let Ok(Some(alfalfa)) = ears_rs::alfalfa::read_alfalfa(&texture) {
+                    if let Some(wings) = alfalfa.get_data(AlfalfaDataKey::Wings) {
+                        add_scene_texture(
+                            scene,
+                            part_context,
+                            PlayerPartEarsTextureType::Wings.into(),
+                            image::load_from_memory(wings)
+                                .expect_throw("Failed to load wings")
+                                .to_rgba8(),
+                            false,
+                        )?;
+                    }
+
+                    if let Some(cape) = alfalfa.get_data(AlfalfaDataKey::Cape) {
+                        add_scene_texture(
+                            scene,
+                            part_context,
+                            PlayerPartEarsTextureType::Cape.into(),
+                            image::load_from_memory(cape)
+                                .expect_throw("Failed to load cape")
+                                .to_rgba8(),
+                            false,
+                        )?;
+                    }
+                }
+
+                ears_rs::utils::process_erase_regions(&mut texture)?;
+            } else if texture_type == PlayerPartEarsTextureType::Cape.into()
+                && texture_type.get_texture_size() != (texture.width(), texture.height())
+            {
+                texture = ears_rs::utils::convert_ears_cape_to_mojang_cape(texture);
+            }
+        }
+
+        if texture_type == PlayerPartTextureType::Skin {
+            ears_rs::utils::strip_alpha(&mut texture);
+        } else if texture_type == PlayerPartTextureType::Cape {
+            part_context.has_cape = true;
+        }
+    }
+    scene.set_texture(
+        graphics_context().expect_throw("Context"),
+        texture_type,
+        &texture,
+    );
+    scene.rebuild_parts(&part_context, PlayerBodyPartType::iter().collect());
+
+    Ok(())
+}
+
+#[wasm_bindgen]
+pub fn get_camera() -> SceneCameraSettings {
+    let camera = scene().expect_throw("Scene not initialized").camera_mut();
+
+    let CameraRotation { yaw, pitch, roll } = camera.get_rotation();
+
+    SceneCameraSettings {
+        distance: camera.get_distance(),
+        rotation: WasmVec3(yaw, pitch, roll),
+        size: WasmVec2(0., 0.),
+        look_at: WasmVec3(0., 0., 0.),
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_sun() -> SceneLightingSettings {
+    let sun = scene()
+        .expect_throw("Scene not initialized")
+        .sun_information_mut();
+
+    SceneLightingSettings {
+        direction: WasmVec3(sun.direction.x, sun.direction.y, sun.direction.z),
+        intensity: sun.intensity,
+        ambient: sun.ambient,
+    }
+}
+
 #[wasm_bindgen]
 pub fn set_camera_rotation(yaw: f32, pitch: f32, roll: f32) {
     if let Some(scene) = scene() {
-        scene.camera_mut().set_rotation(CameraRotation { yaw, pitch, roll });
+        scene
+            .camera_mut()
+            .set_rotation(CameraRotation { yaw, pitch, roll });
         scene.update(graphics_context().expect_throw("Graphics context not initialized"));
     }
 }
@@ -227,17 +326,55 @@ pub async fn run_event_loop(canvas: HtmlCanvasElement, size: WasmVec2) -> JsResu
         .with_inner_size(winit::dpi::LogicalSize::new(size.0, size.1))
         .with_canvas(Some(canvas))
         .with_focusable(true)
+        .with_prevent_default(true)
         .with_decorations(false);
-    
+
     let event_loop = EventLoop::new();
     let window = window.build(&event_loop)?;
-    
+
     event_loop.run(move |event, _, control_flow| {
         *control_flow = winit::event_loop::ControlFlow::Poll;
         match event {
             winit::event::Event::WindowEvent { event, .. } => match event {
                 winit::event::WindowEvent::CloseRequested => {
                     *control_flow = winit::event_loop::ControlFlow::Exit;
+                }
+                winit::event::WindowEvent::MouseInput { state, .. } => {
+                    if let Some(scene) = scene() {
+                        if let Some(context) = graphics_context() {
+                            if state == winit::event::ElementState::Pressed {
+                                mouse::handle_mouse_down();
+                            } else {
+                                mouse::handle_mouse_up();
+                            }
+                        }
+                    }
+                }
+                winit::event::WindowEvent::CursorMoved { position, .. } => {
+                    if let Some(scene) = scene() {
+                        if let Some(context) = graphics_context() {
+                            mouse::handle_mouse_move(
+                                scene,
+                                context,
+                                position.x as f32,
+                                position.y as f32,
+                            );
+                        }
+                    }
+                }
+                winit::event::WindowEvent::MouseWheel { delta, .. } => {
+                    if let Some(scene) = scene() {
+                        if let Some(context) = graphics_context() {
+                            let delta = match delta {
+                                winit::event::MouseScrollDelta::LineDelta(_, delta) => delta,
+                                winit::event::MouseScrollDelta::PixelDelta(delta) => {
+                                    delta.y as f32 / 50.0
+                                }
+                            };
+
+                            mouse::handle_mouse_scroll(scene, context, delta);
+                        }
+                    }
                 }
                 _ => {}
             },
@@ -258,38 +395,56 @@ pub async fn run_event_loop(canvas: HtmlCanvasElement, size: WasmVec2) -> JsResu
 }
 
 #[wasm_bindgen]
-pub async fn initialize(canvas: HtmlCanvasElement) -> JsResult<()> {
+pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> JsResult<()> {
     console_error_panic_hook::set_once();
+    
     let canvas = SendWrapper::new(canvas);
 
+    #[cfg(feature = "webgl")]
+    let backend = Backends::GL;
+    #[cfg(not(feature = "webgl"))]
+    let backend = Backends::BROWSER_WEBGPU;
+
+    #[cfg(not(feature = "webgl"))]
+    let limits = Limits::downlevel_defaults();
+    #[cfg(feature = "webgl")]
+    let limits = Limits::downlevel_webgl2_defaults();
+    
     let mut context = GraphicsContext::new(GraphicsContextDescriptor {
-        backends: Some(Backends::BROWSER_WEBGPU),
+        backends: Some(backend),
         surface_provider: Box::new(|i| {
             Some(
                 i.create_surface_from_canvas(canvas.take())
                     .expect_throw("Failed to create surface from Canvas"),
             )
         }),
-        default_size: (512, 512),
+        default_size: (width, height),
         texture_format: Some(wgpu::TextureFormat::Rgba8Unorm),
         features: Features::empty(),
-        limits: Some(Limits::downlevel_defaults()),
+        limits: Some(limits),
         blend_state: Some(BlendState::PREMULTIPLIED_ALPHA_BLENDING),
         sample_count: Some(1),
         use_smaa: Some(false),
     })
     .await?;
 
-    if let Ok(config_option) = context.surface_config.as_mut() {
-        if let Some(config) = config_option.as_mut() {
-            config.alpha_mode = CompositeAlphaMode::PreMultiplied;
-            
-            if let Some(surface) = context.surface.as_mut() {
-                surface.configure(&context.device, config);
+    {
+        if let Ok(config_option) = context.surface_config.as_mut() {
+            if let Some(config) = config_option.as_mut() {
+                #[cfg(not(feature = "webgl"))]
+                let alpha_mode = CompositeAlphaMode::PreMultiplied;
+                #[cfg(feature = "webgl")]
+                let alpha_mode = CompositeAlphaMode::Opaque;
+
+                config.alpha_mode = alpha_mode;
+                
+                if let Some(surface) = context.surface.as_mut() {
+                    surface.configure(&context.device, config);
+                }
             }
         }
     }
-    
+
     unsafe {
         GRAPHICS_CONTEXT.replace(context);
     }
