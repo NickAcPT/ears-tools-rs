@@ -123,6 +123,7 @@ pub struct SceneCharacterSettings {
     pub has_hat_layer: bool,
     pub has_ears: bool,
     pub has_layers: bool,
+    pub has_cape: bool,
 }
 
 #[wasm_bindgen]
@@ -134,6 +135,7 @@ impl SceneCharacterSettings {
             has_hat_layer: false,
             has_layers: false,
             has_ears: false,
+            has_cape: false,
         }
     }
 }
@@ -188,7 +190,7 @@ pub async fn setup_scene(
         },
         has_hat_layer: model.has_hat_layer,
         has_layers: model.has_layers,
-        has_cape: ears_features.is_some_and(|f| f.cape_enabled),
+        has_cape: ears_features.is_some_and(|f| f.cape_enabled && model.has_cape),
         arm_rotation: 10.0,
         shadow_y_pos: None,
         shadow_is_square: false,
@@ -213,7 +215,7 @@ pub async fn setup_scene(
         &mut part_context,
         PlayerPartTextureType::Skin,
         skin_image,
-        true,
+        model.has_ears,
     )?;
 
     unsafe {
