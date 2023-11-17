@@ -22,8 +22,8 @@ use nmsr_rendering::{
 };
 use send_wrapper::SendWrapper;
 use wasm_bindgen::{prelude::wasm_bindgen, UnwrapThrowExt};
-use web_sys::{console, HtmlCanvasElement};
-use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits, RequestDeviceError};
+use web_sys::HtmlCanvasElement;
+use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits};
 use winit::{
     event_loop::EventLoop,
     platform::web::WindowBuilderExtWebSys,
@@ -215,7 +215,8 @@ pub async fn setup_scene(
         &mut part_context,
         PlayerPartTextureType::Skin,
         skin_image,
-        model.has_ears,
+        true,
+        &model,
     )?;
 
     unsafe {
@@ -231,6 +232,7 @@ fn add_scene_texture(
     texture_type: PlayerPartTextureType,
     mut texture: RgbaImage,
     do_ears_processing: bool,
+    model: &SceneCharacterSettings,
 ) -> JsResult<()> {
     if do_ears_processing {
         {
@@ -248,6 +250,7 @@ fn add_scene_texture(
                                 .expect_throw("Failed to load wings")
                                 .to_rgba8(),
                             false,
+                            model
                         )?;
                     }
 
@@ -260,6 +263,7 @@ fn add_scene_texture(
                                 .expect_throw("Failed to load cape")
                                 .to_rgba8(),
                             true,
+                            model
                         )?;
                     }
                 }
@@ -273,7 +277,7 @@ fn add_scene_texture(
         if texture_type == PlayerPartTextureType::Skin {
             ears_rs::utils::strip_alpha(&mut texture);
         } else if texture_type == PlayerPartTextureType::Cape {
-            part_context.has_cape = true;
+            part_context.has_cape = model.has_cape;
         }
     }
     scene.set_texture(
