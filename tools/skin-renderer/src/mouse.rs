@@ -1,8 +1,8 @@
 use nmsr_rendering::{
     high_level::{
-        camera::{self, CameraRotation},
+        camera::CameraRotation,
         pipeline::{
-            scene::{Scene, SunInformation},
+            scene::Scene,
             GraphicsContext,
         },
     },
