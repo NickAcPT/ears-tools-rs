@@ -329,7 +329,6 @@ pub async fn run_event_loop(canvas: HtmlCanvasElement, size: WasmVec2) -> JsResu
         .with_transparent(true)
         .with_inner_size(size)
         .with_canvas(Some(canvas))
-        .with_focusable(true)
         .with_prevent_default(true)
         .with_resizable(false)
         .with_decorations(false);
