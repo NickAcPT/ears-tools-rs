@@ -63,6 +63,8 @@ pub fn handle_mouse_move(scene: &mut Scene, ctx: &GraphicsContext, x: f32, y: f3
 
             yaw += x;
             pitch += y;
+            
+            pitch = pitch.clamp(-89.9, 89.9);
 
             rotate_camera(scene, ctx, yaw, pitch, *roll);
         }
@@ -73,6 +75,7 @@ pub fn handle_mouse_move(scene: &mut Scene, ctx: &GraphicsContext, x: f32, y: f3
         LAST_Y.replace(y);
     }
 }
+
 pub fn handle_mouse_down() {
     unsafe { MOUSE_DOWN = true };
 }
@@ -92,6 +95,8 @@ pub fn handle_mouse_scroll(scene: &mut Scene, ctx: &GraphicsContext, delta: f32)
 
     if let Some(dist) = dist {
         *dist -= delta;
+        
+        *dist = dist.clamp(5.0, 90.0);
 
         scene.update(ctx);
     }

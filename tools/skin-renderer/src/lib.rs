@@ -24,11 +24,6 @@ use send_wrapper::SendWrapper;
 use wasm_bindgen::{prelude::wasm_bindgen, UnwrapThrowExt};
 use web_sys::HtmlCanvasElement;
 use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits};
-use winit::{
-    event_loop::EventLoop,
-    platform::web::WindowBuilderExtWebSys,
-    window::WindowBuilder,
-};
 
 static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
 static mut SCENE: Option<Scene<SceneContextWrapper>> = None;
@@ -250,7 +245,7 @@ fn add_scene_texture(
                                 .expect_throw("Failed to load wings")
                                 .to_rgba8(),
                             false,
-                            model
+                            model,
                         )?;
                     }
 
@@ -263,7 +258,7 @@ fn add_scene_texture(
                                 .expect_throw("Failed to load cape")
                                 .to_rgba8(),
                             true,
-                            model
+                            model,
                         )?;
                     }
                 }
@@ -328,82 +323,36 @@ pub fn set_camera_rotation(yaw: f32, pitch: f32, roll: f32) {
 }
 
 #[wasm_bindgen]
-pub async fn run_event_loop(canvas: HtmlCanvasElement, size: WasmVec2) -> JsResult<()> {
-    let size = winit::dpi::PhysicalSize::new(size.0, size.1);
-    
-    let window = WindowBuilder::new()
-        .with_transparent(true)
-        .with_inner_size(size)
-        .with_canvas(Some(canvas))
-        .with_prevent_default(true)
-        .with_resizable(false)
-        .with_decorations(false);
+pub async fn notify_mouse_down() {
+    mouse::handle_mouse_down();
+}
 
-    let event_loop = EventLoop::new();
-    let window = window.build(&event_loop)?;
-    
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = winit::event_loop::ControlFlow::Poll;
-        match event {
-            winit::event::Event::WindowEvent { event, .. } => match event {
-                winit::event::WindowEvent::CloseRequested => {
-                    *control_flow = winit::event_loop::ControlFlow::Exit;
-                }
-                winit::event::WindowEvent::MouseInput { state, .. } => {
-                    if state == winit::event::ElementState::Pressed {
-                        mouse::handle_mouse_down();
-                    } else {
-                        mouse::handle_mouse_up();
-                    }
-                }
-                winit::event::WindowEvent::CursorMoved { position, .. } => {
-                    if let Some(scene) = scene() {
-                        if let Some(context) = graphics_context() {
-                            mouse::handle_mouse_move(
-                                scene,
-                                context,
-                                position.x as f32,
-                                position.y as f32,
-                            );
-                        }
-                    }
-                }
-                winit::event::WindowEvent::MouseWheel { delta, .. } => {
-                    if let Some(scene) = scene() {
-                        if let Some(context) = graphics_context() {
-                            let delta = match delta {
-                                winit::event::MouseScrollDelta::LineDelta(_, delta) => delta,
-                                winit::event::MouseScrollDelta::PixelDelta(delta) => {
-                                    delta.y as f32 / 50.0
-                                }
-                            };
+#[wasm_bindgen]
+pub async fn notify_mouse_up() {
+    mouse::handle_mouse_up();
+}
 
-                            mouse::handle_mouse_scroll(scene, context, delta);
-                        }
-                    }
-                }
-                winit::event::WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                    // Revert the scale factor change
-                    new_inner_size.width = size.width as u32;
-                    new_inner_size.height = size.height as u32;
-                    
-                }
-                _ => {}
-            },
-            winit::event::Event::MainEventsCleared => {
-                window.request_redraw();
-            }
-            
-            winit::event::Event::RedrawRequested(_) => {
-                if let Some(scene) = scene() {
-                    scene
-                        .render(graphics_context().expect_throw("Graphics context not initialized"))
-                        .unwrap();
-                }
-            }
-            _ => {}
-        }
-    });
+#[wasm_bindgen]
+pub async fn notify_mouse_move(x: f32, y: f32) {
+    if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
+        mouse::handle_mouse_move(scene, ctx, x, y);
+    }
+}
+
+#[wasm_bindgen]
+pub async fn notify_mouse_scroll(delta: f32) {
+    if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
+        mouse::handle_mouse_scroll(scene, ctx, delta);
+    }
+}
+
+#[wasm_bindgen]
+pub async fn render_frame() -> JsResult<()> {
+    if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
+        scene.render(ctx)?;
+    }
+
+    Ok(())
 }
 
 #[wasm_bindgen]
