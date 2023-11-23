@@ -14,13 +14,12 @@ crate-type = ["cdylib", "rlib"]
 ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
 console_error_panic_hook = "*"
 wasm-bindgen = { workspace = true }
-nmsr-rendering = { git = "https://github.com/NickAcPT/nmsr-rs" }
+nmsr-rasterizer-test = { path = "../../../nmsr-rasterizer-test" }
 nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 # web-sys has to be locked to 0.3.64 because otherwise, wgpu breaks
-web-sys = { version = "=0.3.64", features = ["HtmlCanvasElement"] }
-# We're being spicy here by asking it to be send and sync..
-wgpu = { version = "^0.18", features = ["fragile-send-sync-non-atomic-wasm"] }
+web-sys = { version = "=0.3.64", features = ["HtmlCanvasElement", "CanvasRenderingContext2d", "ImageData"] }
 winit = "0.28.6"
+glam = { version = "*", features = ["core-simd"] }
 js-utils = { workspace = true }
 wasm-bindgen-futures = "0.4.38"
 send_wrapper = "0.6.0"
@@ -28,78 +27,11 @@ image = { version = "0", default-features = false, features = ["png"] }
 
 [features]
 default = ["ears"]
-webgl = ["wgpu/webgl"]
-ears = ["nmsr-rendering/ears", "nmsr-player-parts/ears"]
+ears = ["nmsr-player-parts/ears"]
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = [
-    "-c",
-    "--roundtrip",
-    "-Oz",
-    "--dce",
-    "--duplicate-import-elimination",
-    "--duplicate-function-elimination",
-    "--generate-global-effects",
-    "--memory-packing",
-    "--directize",
-    "--limit-segments",
-    "--once-reduction",
-    "--monomorphize",
-    "--const-hoisting",
-    "--abstract-type-refining",
-    "--optimize-added-constants-propagate",
-    "--optimize-instructions",
-    "--type-ssa",
-    "--strip-eh",
-    "--strip-debug",
-    "--strip-dwarf",
-    "--strip-producers",
-    "--signature-pruning",
-    "--rse",
-    "--gto",
-    "--remove-unused-names",
-    "--remove-unused-types",
-    "--remove-unused-module-elements",
-    "--remove-unused-nonfunction-module-elements",
-    "--remove-unused-brs",
-    "--vacuum",
-    "--merge-similar-functions",
-    "--local-cse",
-    "--gufa-optimizing",
-    "-tnh",
-    "-uim",
-    "-iit",
-    "--dae-optimizing",
-    "--code-pushing",
-    "--merge-locals",
-    "--coalesce-locals-learning",
-    "--avoid-reinterprets",
-    "--untee",
-    "--type-merging",
-    "--simplify-locals-notee",
-    "--simplify-locals-nostructure",
-    "--simplify-locals-notee-nostructure",
-    "--simplify-globals-optimizing",
-    "--precompute",
-    "--precompute-propagate",
-    "--optimize-casts",
-    "--multi-memory-lowering",
-    "--merge-blocks",
-    "--licm",
-    "--inlining-optimizing",
-    "--code-folding",
-    "-cw",
-    "-ifwl",
-    "--optimize-stack-ir",
-    "-lmu",
-    "--ssa",
-    "--optimize-for-js",
-    "--tuple-optimization",
-    "--unsubtyping",
-    "--cfp",
-    "--reorder-locals",
-    "--simplify-locals",
-    "--gufa-cast-all",
-    "-O4",
-    "--vacuum",
+    "--enable-simd",
+    "-g",
+    "-O3",
 ]

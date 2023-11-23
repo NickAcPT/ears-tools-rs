@@ -1,39 +1,38 @@
 mod mouse;
 
 use ears_rs::parser::EarsParser;
+use glam::{Vec3, Vec3A};
 use image::{ImageFormat, RgbaImage};
 use js_utils::JsResult;
 use nmsr_player_parts::{
     model::PlayerModel,
-    parts::provider::PlayerPartProviderContext,
-    types::{PlayerBodyPartType, PlayerPartTextureType},
-    IntoEnumIterator,
+    parts::provider::{ears::PlayerPartEarsTextureType, PlayerPartProviderContext},
+    types::PlayerPartTextureType,
 };
-use nmsr_rendering::{
-    high_level::{
-        camera::{Camera, CameraRotation, ProjectionParameters},
-        pipeline::{
-            scene::{Scene, Size, SunInformation},
-            Features, GraphicsContext, GraphicsContextDescriptor, SceneContext,
-            SceneContextWrapper,
-        },
-    },
-    low_level::Vec3,
+use nmsr_rasterizer_test::{
+    camera::{Camera, CameraRotation, ProjectionParameters, self},
+    model::{RenderEntry, Size},
+    shader::{ShaderState, SunInformation},
 };
 use send_wrapper::SendWrapper;
-use wasm_bindgen::{prelude::wasm_bindgen, UnwrapThrowExt};
-use web_sys::HtmlCanvasElement;
-use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits};
+use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue, UnwrapThrowExt, closure::Closure};
+use wasm_bindgen_futures::js_sys::Object;
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
-static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
-static mut SCENE: Option<Scene<SceneContextWrapper>> = None;
+static mut RENDER_ENTRY: Option<RenderEntry> = None;
+static mut SCENE: Option<ShaderState> = None;
+static mut CANVAS: Option<SendWrapper<CanvasRenderingContext2d>> = None;
 
-fn graphics_context() -> Option<&'static GraphicsContext> {
-    unsafe { GRAPHICS_CONTEXT.as_ref() }
+fn scene() -> Option<&'static ShaderState> {
+    unsafe { SCENE.as_ref() }
 }
 
-fn scene() -> Option<&'static mut Scene<SceneContextWrapper>> {
+fn scene_mut() -> Option<&'static mut ShaderState> {
     unsafe { SCENE.as_mut() }
+}
+
+fn render_entry() -> Option<&'static mut RenderEntry> {
+    unsafe { RENDER_ENTRY.as_mut() }
 }
 
 #[wasm_bindgen]
@@ -63,6 +62,12 @@ impl WasmVec3 {
 impl From<WasmVec2> for (f32, f32) {
     fn from(WasmVec2(x, y): WasmVec2) -> Self {
         (x, y)
+    }
+}
+
+impl From<WasmVec3> for Vec3A {
+    fn from(WasmVec3(x, y, z): WasmVec3) -> Self {
+        Vec3A::from([x, y, z])
     }
 }
 
@@ -160,10 +165,7 @@ pub async fn setup_scene(
         height: height as u32,
     };
 
-    let graphics_context = graphics_context().expect_throw("Graphics context not initialized");
-    let scene_context = SceneContext::new(graphics_context);
-
-    let camera = Camera::new_orbital(
+    let mut camera = Camera::new_orbital(
         look_at.into(),
         distance,
         CameraRotation { yaw, pitch, roll },
@@ -171,7 +173,11 @@ pub async fn setup_scene(
         Some(size),
     );
 
-    let lighting = SunInformation::new(direction.into(), intensity, ambient);
+    let lighting = SunInformation {
+        direction: direction.into(),
+        intensity,
+        ambient,
+    };
 
     let skin_image = image::load_from_memory_with_format(&skin, ImageFormat::Png)?.into_rgba8();
 
@@ -193,107 +199,96 @@ pub async fn setup_scene(
         ears_features,
     };
 
-    let parts: Vec<_> = PlayerBodyPartType::iter().into_iter().collect();
+    let scene_context = RenderEntry::new(size, &part_context);
 
-    let mut scene: Scene<SceneContextWrapper> = Scene::new(
-        graphics_context,
-        scene_context.into(),
-        camera,
+    let scene = add_scene_texture(
+        &mut camera,
         lighting,
-        size,
-        &part_context,
-        &parts,
-    );
-
-    add_scene_texture(
-        &mut scene,
         &mut part_context,
         PlayerPartTextureType::Skin,
         skin_image,
-        true,
+        model.has_ears,
         &model,
     )?;
 
     unsafe {
         SCENE.replace(scene);
+        RENDER_ENTRY.replace(scene_context);
     }
 
     Ok(())
 }
 
 fn add_scene_texture(
-    scene: &mut Scene,
+    camera: &mut Camera,
+    lighting: SunInformation,
     part_context: &mut PlayerPartProviderContext,
     texture_type: PlayerPartTextureType,
     mut texture: RgbaImage,
     do_ears_processing: bool,
     model: &SceneCharacterSettings,
-) -> JsResult<()> {
+) -> JsResult<ShaderState> {
     if do_ears_processing {
-        {
             use ears_rs::alfalfa::AlfalfaDataKey;
-            use nmsr_rendering::high_level::parts::provider::ears::PlayerPartEarsTextureType;
-
-            if texture_type == PlayerPartTextureType::Skin {
-                if let Ok(Some(alfalfa)) = ears_rs::alfalfa::read_alfalfa(&texture) {
-                    if let Some(wings) = alfalfa.get_data(AlfalfaDataKey::Wings) {
-                        add_scene_texture(
-                            scene,
-                            part_context,
-                            PlayerPartEarsTextureType::Wings.into(),
-                            image::load_from_memory(wings)
-                                .expect_throw("Failed to load wings")
-                                .to_rgba8(),
-                            false,
-                            model,
-                        )?;
-                    }
-
-                    if let Some(cape) = alfalfa.get_data(AlfalfaDataKey::Cape) {
-                        add_scene_texture(
-                            scene,
-                            part_context,
-                            PlayerPartEarsTextureType::Cape.into(),
-                            image::load_from_memory(cape)
-                                .expect_throw("Failed to load cape")
-                                .to_rgba8(),
-                            true,
-                            model,
-                        )?;
-                    }
-                }
-
-                ears_rs::utils::process_erase_regions(&mut texture)?;
-            } else if texture_type == PlayerPartEarsTextureType::Cape.into() {
-                texture = ears_rs::utils::convert_ears_cape_to_mojang_cape(texture);
-            }
-        }
 
         if texture_type == PlayerPartTextureType::Skin {
-            ears_rs::utils::strip_alpha(&mut texture);
-        } else if texture_type == PlayerPartTextureType::Cape {
-            part_context.has_cape = model.has_cape;
+            if let Ok(Some(alfalfa)) = ears_rs::alfalfa::read_alfalfa(&texture) {
+                if let Some(wings) = alfalfa.get_data(AlfalfaDataKey::Wings) {
+                    add_scene_texture(
+                        camera,
+                        lighting,
+                        part_context,
+                        PlayerPartEarsTextureType::Wings.into(),
+                        image::load_from_memory(wings)
+                            .expect_throw("Failed to load wings")
+                            .to_rgba8(),
+                        false,
+                        model,
+                    )?;
+                }
+
+                if let Some(cape) = alfalfa.get_data(AlfalfaDataKey::Cape) {
+                    add_scene_texture(
+                        camera,
+                        lighting,
+                        part_context,
+                        PlayerPartEarsTextureType::Cape.into(),
+                        image::load_from_memory(cape)
+                            .expect_throw("Failed to load cape")
+                            .to_rgba8(),
+                        true,
+                        model,
+                    )?;
+                }
+            }
+
+            ears_rs::utils::process_erase_regions(&mut texture)?;
+        } else if texture_type == PlayerPartEarsTextureType::Cape.into() {
+            texture = ears_rs::utils::convert_ears_cape_to_mojang_cape(texture);
         }
     }
-    scene.set_texture(
-        graphics_context().expect_throw("Context"),
-        texture_type,
-        &texture,
-    );
-    scene.rebuild_parts(&part_context, PlayerBodyPartType::iter().collect());
 
-    Ok(())
+    if texture_type == PlayerPartTextureType::Skin {
+        ears_rs::utils::strip_alpha(&mut texture);
+    } else if texture_type == PlayerPartTextureType::Cape {
+        part_context.has_cape = model.has_cape;
+    }
+
+    Ok(ShaderState::new(*camera, texture, lighting))
 }
 
 #[wasm_bindgen]
 pub fn get_camera() -> SceneCameraSettings {
-    let camera = scene().expect_throw("Scene not initialized").camera_mut();
+    let camera = scene().expect_throw("Scene not initialized").camera;
+    
+    //let mut binding = camera.clone();
+    //let look_at = binding.get_look_at_mut().expect("Failed to get look at");
 
     let CameraRotation { yaw, pitch, roll } = camera.get_rotation();
 
     SceneCameraSettings {
-        distance: camera.get_distance(),
-        rotation: WasmVec3(yaw, pitch, roll),
+        distance: camera.get_distance().unwrap_or(45.0),
+        rotation: WasmVec3(*yaw, *pitch, *roll),
         size: WasmVec2(0., 0.),
         look_at: WasmVec3(0., 0., 0.),
     }
@@ -301,9 +296,7 @@ pub fn get_camera() -> SceneCameraSettings {
 
 #[wasm_bindgen]
 pub fn get_sun() -> SceneLightingSettings {
-    let sun = scene()
-        .expect_throw("Scene not initialized")
-        .sun_information_mut();
+    let sun = &scene_mut().expect_throw("Scene not initialized").sun;
 
     SceneLightingSettings {
         direction: WasmVec3(sun.direction.x, sun.direction.y, sun.direction.z),
@@ -313,12 +306,32 @@ pub fn get_sun() -> SceneLightingSettings {
 }
 
 #[wasm_bindgen]
+pub fn set_camera_z(z: f32) {
+    /* if let Some(scene) = scene_mut() {
+        let look_at = scene.camera.get_look_at_mut();
+
+        if let Some(camera) = look_at {
+            camera.z = z;
+        }
+
+        scene.update();
+    } */
+}
+
+
+#[wasm_bindgen]
 pub fn set_camera_rotation(yaw: f32, pitch: f32, roll: f32) {
-    if let Some(scene) = scene() {
-        scene
-            .camera_mut()
-            .set_rotation(CameraRotation { yaw, pitch, roll });
-        scene.update(graphics_context().expect_throw("Graphics context not initialized"));
+    if let Some(scene) = scene_mut() {
+        let rotation = scene.camera.get_rotation_mut();
+        
+        *rotation = CameraRotation {
+            yaw,
+            pitch,
+            roll,
+        };
+        
+        scene.update();
+        
     }
 }
 
@@ -334,22 +347,38 @@ pub async fn notify_mouse_up() {
 
 #[wasm_bindgen]
 pub async fn notify_mouse_move(x: f32, y: f32) {
-    if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
+    if let (Some(scene), Some(ctx)) = (scene_mut(), render_entry()) {
         mouse::handle_mouse_move(scene, ctx, x, y);
     }
 }
 
 #[wasm_bindgen]
 pub async fn notify_mouse_scroll(delta: f32) {
-    if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
+    if let (Some(scene), Some(ctx)) = (scene_mut(), render_entry()) {
         mouse::handle_mouse_scroll(scene, ctx, delta);
     }
 }
 
 #[wasm_bindgen]
-pub async fn render_frame() -> JsResult<()> {
-    if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
-        scene.render(ctx)?;
+pub fn render_frame() -> JsResult<()> {
+    if let (Some(scene), Some(ctx)) = (scene_mut(), render_entry()) {
+        ctx.textures.depth_buffer.fill(1.0);
+        ctx.textures.output.fill(0);
+
+        ctx.draw(scene);
+
+        let context = unsafe { CANVAS.as_ref().expect_throw("Canvas not initialized") };
+
+        let image_data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
+            wasm_bindgen::Clamped(&ctx.textures.output.as_raw()),
+            ctx.size.width,
+            ctx.size.height,
+        )
+        .expect("Failed to create image data");
+
+        context
+            .put_image_data(&image_data, 0 as f64, 0 as f64)
+            .expect("Failed to put image data");
     }
 
     Ok(())
@@ -359,55 +388,15 @@ pub async fn render_frame() -> JsResult<()> {
 pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> JsResult<()> {
     console_error_panic_hook::set_once();
 
-    let canvas = SendWrapper::new(canvas);
-
-    #[cfg(feature = "webgl")]
-    let backend = Backends::GL;
-    #[cfg(not(feature = "webgl"))]
-    let backend = Backends::BROWSER_WEBGPU;
-
-    #[cfg(not(feature = "webgl"))]
-    let limits = Limits::downlevel_defaults();
-    #[cfg(feature = "webgl")]
-    let limits = Limits::downlevel_webgl2_defaults();
-
-    let mut context = GraphicsContext::new(GraphicsContextDescriptor {
-        backends: Some(backend),
-        surface_provider: Box::new(|i| {
-            Some(
-                i.create_surface_from_canvas(canvas.take())
-                    .expect_throw("Failed to create surface from Canvas"),
-            )
-        }),
-        default_size: (width, height),
-        texture_format: Some(wgpu::TextureFormat::Rgba8Unorm),
-        features: Features::empty(),
-        limits: Some(limits),
-        blend_state: Some(BlendState::PREMULTIPLIED_ALPHA_BLENDING),
-        sample_count: Some(1),
-        use_smaa: Some(false),
-    })
-    .await?;
-
-    {
-        if let Ok(config_option) = context.surface_config.as_mut() {
-            if let Some(config) = config_option.as_mut() {
-                #[cfg(not(feature = "webgl"))]
-                let alpha_mode = CompositeAlphaMode::PreMultiplied;
-                #[cfg(feature = "webgl")]
-                let alpha_mode = CompositeAlphaMode::Opaque;
-
-                config.alpha_mode = alpha_mode;
-
-                if let Some(surface) = context.surface.as_mut() {
-                    surface.configure(&context.device, config);
-                }
-            }
-        }
-    }
-
     unsafe {
-        GRAPHICS_CONTEXT.replace(context);
+        let context: Result<Option<Object>, JsValue> = canvas.get_context("2d");
+        let context = context.expect("Failed to get context");
+        let context = context.expect("Failed to get context");
+        let context: CanvasRenderingContext2d = context
+            .dyn_into::<web_sys::CanvasRenderingContext2d>()
+            .expect("Failed to get context");
+
+        CANVAS.replace(SendWrapper::new(context));
     }
 
     Ok(())
