@@ -806,6 +806,16 @@ dependencies = [
 [[package]]
 name = "nmsr-player-parts"
 version = "0.1.0"
+dependencies = [
+ "glam",
+ "paste",
+ "strum",
+ "thiserror",
+]
+
+[[package]]
+name = "nmsr-player-parts"
+version = "0.1.0"
 source = "git+https://github.com/NickAcPT/nmsr-rs#e621000c4cbfe55a8dfb6afc860978262f730ca4"
 dependencies = [
  "ears-rs",
@@ -824,7 +834,26 @@ dependencies = [
  "ears-rs",
  "glam",
  "image",
- "nmsr-rendering",
+ "nmsr-rendering 0.1.0",
+]
+
+[[package]]
+name = "nmsr-rendering"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytemuck",
+ "derive_more",
+ "glam",
+ "image",
+ "itertools",
+ "nmsr-player-parts 0.1.0",
+ "paste",
+ "strum",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "wgpu-types",
 ]
 
 [[package]]
@@ -838,7 +867,7 @@ dependencies = [
  "glam",
  "image",
  "itertools",
- "nmsr-player-parts",
+ "nmsr-player-parts 0.1.0 (git+https://github.com/NickAcPT/nmsr-rs)",
  "paste",
  "strum",
  "thiserror",
@@ -859,7 +888,7 @@ dependencies = [
  "glam",
  "image",
  "itertools",
- "nmsr-rendering",
+ "nmsr-rendering 0.1.0 (git+https://github.com/NickAcPT/nmsr-rs)",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -1231,7 +1260,7 @@ dependencies = [
  "glam",
  "image",
  "js-utils",
- "nmsr-player-parts",
+ "nmsr-player-parts 0.1.0 (git+https://github.com/NickAcPT/nmsr-rs)",
  "nmsr-rasterizer-test",
  "send_wrapper",
  "wasm-bindgen",

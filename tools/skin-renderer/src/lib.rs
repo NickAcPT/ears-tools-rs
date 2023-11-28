@@ -306,20 +306,6 @@ pub fn get_sun() -> SceneLightingSettings {
 }
 
 #[wasm_bindgen]
-pub fn set_camera_z(z: f32) {
-    /* if let Some(scene) = scene_mut() {
-        let look_at = scene.camera.get_look_at_mut();
-
-        if let Some(camera) = look_at {
-            camera.z = z;
-        }
-
-        scene.update();
-    } */
-}
-
-
-#[wasm_bindgen]
 pub fn set_camera_rotation(yaw: f32, pitch: f32, roll: f32) {
     if let Some(scene) = scene_mut() {
         let rotation = scene.camera.get_rotation_mut();
