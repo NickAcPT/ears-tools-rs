@@ -1,4 +1,8 @@
 mod mouse;
+#[cfg(feature = "software-rendering")]
+mod nmsr_rendering_compat;
+#[cfg(feature = "software-rendering")]
+use nmsr_rendering_compat as nmsr_rendering;
 
 use ears_rs::parser::EarsParser;
 use image::{ImageFormat, RgbaImage};
@@ -9,30 +13,51 @@ use nmsr_player_parts::{
     types::{PlayerBodyPartType, PlayerPartTextureType},
     IntoEnumIterator,
 };
+#[cfg(not(feature = "software-rendering"))]
+use nmsr_rendering::high_level::pipeline::{
+    Features, GraphicsContext, GraphicsContextDescriptor, SceneContext, SceneContextWrapper,
+};
 use nmsr_rendering::{
     high_level::{
         camera::{Camera, CameraRotation, ProjectionParameters},
-        pipeline::{
-            scene::{Scene, Size, SunInformation},
-            Features, GraphicsContext, GraphicsContextDescriptor, SceneContext,
-            SceneContextWrapper,
-        },
+        pipeline::scene::{Scene, Size, SunInformation},
     },
     low_level::Vec3,
 };
 use send_wrapper::SendWrapper;
 use wasm_bindgen::{prelude::wasm_bindgen, UnwrapThrowExt};
 use web_sys::HtmlCanvasElement;
+#[cfg(not(feature = "software-rendering"))]
 use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits};
 
-static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
-static mut SCENE: Option<Scene<SceneContextWrapper>> = None;
+use crate::nmsr_rendering_compat::ext::*;
 
+#[cfg(not(feature = "software-rendering"))]
+type SceneType = Scene<SceneContextWrapper>;
+#[cfg(feature = "software-rendering")]
+type SceneType = Scene<'static, ()>;
+
+#[cfg(not(feature = "software-rendering"))]
+static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
+#[cfg(not(feature = "software-rendering"))]
 fn graphics_context() -> Option<&'static GraphicsContext> {
     unsafe { GRAPHICS_CONTEXT.as_ref() }
 }
 
-fn scene() -> Option<&'static mut Scene<SceneContextWrapper>> {
+#[cfg(feature = "software-rendering")]
+static mut CANVAS: Option<SendWrapper<web_sys::CanvasRenderingContext2d>> = None;
+#[cfg(feature = "software-rendering")]
+fn canvas() -> Option<&'static SendWrapper<web_sys::CanvasRenderingContext2d>> {
+    unsafe { CANVAS.as_ref() }
+}
+
+#[cfg(feature = "software-rendering")]
+fn graphics_context() -> Option<&'static ()> {
+    Some(&())
+}
+
+static mut SCENE: Option<SceneType> = None;
+fn scene() -> Option<&'static mut SceneType> {
     unsafe { SCENE.as_mut() }
 }
 
@@ -159,8 +184,9 @@ pub async fn setup_scene(
         width: width as u32,
         height: height as u32,
     };
-
+    #[cfg(not(feature = "software-rendering"))]
     let graphics_context = graphics_context().expect_throw("Graphics context not initialized");
+    #[cfg(not(feature = "software-rendering"))]
     let scene_context = SceneContext::new(graphics_context);
 
     let camera = Camera::new_orbital(
@@ -195,8 +221,10 @@ pub async fn setup_scene(
 
     let parts: Vec<_> = PlayerBodyPartType::iter().into_iter().collect();
 
-    let mut scene: Scene<SceneContextWrapper> = Scene::new(
+    let mut scene: SceneType = Scene::new(
+        #[cfg(not(feature = "software-rendering"))]
         graphics_context,
+        #[cfg(not(feature = "software-rendering"))]
         scene_context.into(),
         camera,
         lighting,
@@ -222,7 +250,7 @@ pub async fn setup_scene(
 }
 
 fn add_scene_texture(
-    scene: &mut Scene,
+    scene: &mut SceneType,
     part_context: &mut PlayerPartProviderContext,
     texture_type: PlayerPartTextureType,
     mut texture: RgbaImage,
@@ -276,10 +304,12 @@ fn add_scene_texture(
         }
     }
     scene.set_texture(
+        #[cfg(not(feature = "software-rendering"))]
         graphics_context().expect_throw("Context"),
         texture_type,
         &texture,
     );
+    #[cfg(not(feature = "software-rendering"))]
     scene.rebuild_parts(&part_context, PlayerBodyPartType::iter().collect());
 
     Ok(())
@@ -318,7 +348,11 @@ pub fn set_camera_rotation(yaw: f32, pitch: f32, roll: f32) {
         scene
             .camera_mut()
             .set_rotation(CameraRotation { yaw, pitch, roll });
-        scene.update(graphics_context().expect_throw("Graphics context not initialized"));
+
+        scene.update(
+            #[cfg(not(feature = "software-rendering"))]
+            graphics_context().expect_throw("Graphics context not initialized"),
+        );
     }
 }
 
@@ -349,12 +383,54 @@ pub async fn notify_mouse_scroll(delta: f32) {
 #[wasm_bindgen]
 pub async fn render_frame() -> JsResult<()> {
     if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
-        scene.render(ctx)?;
+        scene.render(
+            #[cfg(not(feature = "software-rendering"))]
+            ctx,
+        )?;
+
+        #[cfg(feature = "software-rendering")]
+        {
+            let size = scene.get_size();
+            
+            let context = unsafe { CANVAS.as_ref().expect_throw("Canvas not initialized") };
+
+            let image_data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
+                wasm_bindgen::Clamped(scene.copy_output_texture()),
+                size.width,
+                size.height,
+            )
+            .expect("Failed to create image data");
+
+            context
+                .put_image_data(&image_data, 0 as f64, 0 as f64)
+                .expect("Failed to put image data");
+        }
     }
 
     Ok(())
 }
 
+#[cfg(feature = "software-rendering")]
+#[wasm_bindgen]
+pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> JsResult<()> {
+    use wasm_bindgen::{JsCast, JsValue};
+    use wasm_bindgen_futures::js_sys::Object;
+    use web_sys::CanvasRenderingContext2d;
+
+    console_error_panic_hook::set_once();
+
+    unsafe {
+        let context: Result<Option<Object>, JsValue> = canvas.get_context("2d");
+        let context = context.expect("Failed to get context");
+        let context = context.expect("Failed to get context");
+        let context: CanvasRenderingContext2d =
+            JsCast::dyn_into::<CanvasRenderingContext2d>(context).expect("Failed to get context");
+
+        CANVAS.replace(SendWrapper::new(context));
+    }
+}
+
+#[cfg(any(feature = "webgl", feature = "webgpu"))]
 #[wasm_bindgen]
 pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> JsResult<()> {
     console_error_panic_hook::set_once();
