@@ -1,6 +1,9 @@
 mod mouse;
 #[cfg(feature = "software-rendering")]
 mod nmsr_rendering_compat;
+use std::sync::Arc;
+
+use glam::Vec3A;
 #[cfg(feature = "software-rendering")]
 use nmsr_rendering_compat as nmsr_rendering;
 
@@ -30,12 +33,10 @@ use web_sys::HtmlCanvasElement;
 #[cfg(not(feature = "software-rendering"))]
 use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits};
 
-use crate::nmsr_rendering_compat::ext::*;
-
 #[cfg(not(feature = "software-rendering"))]
 type SceneType = Scene<SceneContextWrapper>;
 #[cfg(feature = "software-rendering")]
-type SceneType = Scene<'static, ()>;
+type SceneType = Scene<()>;
 
 #[cfg(not(feature = "software-rendering"))]
 static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
@@ -94,6 +95,12 @@ impl From<WasmVec2> for (f32, f32) {
 impl From<WasmVec3> for Vec3 {
     fn from(WasmVec3(x, y, z): WasmVec3) -> Self {
         Vec3::from([x, y, z])
+    }
+}
+
+impl From<WasmVec3> for Vec3A {
+    fn from(WasmVec3(x, y, z): WasmVec3) -> Self {
+        Vec3A::from([x, y, z])
     }
 }
 
@@ -221,7 +228,7 @@ pub async fn setup_scene(
 
     let parts: Vec<_> = PlayerBodyPartType::iter().into_iter().collect();
 
-    let mut scene: SceneType = Scene::new(
+    let mut scene: SceneType = SceneType::new(
         #[cfg(not(feature = "software-rendering"))]
         graphics_context,
         #[cfg(not(feature = "software-rendering"))]
@@ -229,6 +236,7 @@ pub async fn setup_scene(
         camera,
         lighting,
         size,
+        #[cfg(not(feature = "software-rendering"))]
         &part_context,
         &parts,
     );
@@ -238,7 +246,7 @@ pub async fn setup_scene(
         &mut part_context,
         PlayerPartTextureType::Skin,
         skin_image,
-        true,
+        model.has_ears,
         &model,
     )?;
 
@@ -296,18 +304,26 @@ fn add_scene_texture(
                 texture = ears_rs::utils::convert_ears_cape_to_mojang_cape(texture);
             }
         }
-
-        if texture_type == PlayerPartTextureType::Skin {
-            ears_rs::utils::strip_alpha(&mut texture);
-        } else if texture_type == PlayerPartTextureType::Cape {
-            part_context.has_cape = model.has_cape;
-        }
     }
+
+    if texture_type == PlayerPartTextureType::Skin {
+        ears_rs::utils::strip_alpha(&mut texture);
+    } else if texture_type == PlayerPartTextureType::Cape {
+        part_context.has_cape = model.has_cape;
+    }
+
+    #[cfg(feature = "software-rendering")]
+    let texture = Arc::new(texture);
+    #[cfg(not(feature = "software-rendering"))]
+    let texture = &texture;
+
     scene.set_texture(
         #[cfg(not(feature = "software-rendering"))]
         graphics_context().expect_throw("Context"),
         texture_type,
-        &texture,
+        texture,
+        #[cfg(feature = "software-rendering")]
+        &part_context,
     );
     #[cfg(not(feature = "software-rendering"))]
     scene.rebuild_parts(&part_context, PlayerBodyPartType::iter().collect());
@@ -344,14 +360,14 @@ pub fn get_sun() -> SceneLightingSettings {
 
 #[wasm_bindgen]
 pub fn set_camera_rotation(yaw: f32, pitch: f32, roll: f32) {
-    if let Some(scene) = scene() {
+    if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
         scene
             .camera_mut()
             .set_rotation(CameraRotation { yaw, pitch, roll });
 
         scene.update(
             #[cfg(not(feature = "software-rendering"))]
-            graphics_context().expect_throw("Graphics context not initialized"),
+            ctx,
         );
     }
 }
@@ -369,14 +385,25 @@ pub async fn notify_mouse_up() {
 #[wasm_bindgen]
 pub async fn notify_mouse_move(x: f32, y: f32) {
     if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
-        mouse::handle_mouse_move(scene, ctx, x, y);
+        mouse::handle_mouse_move(
+            scene,
+            #[cfg(not(feature = "software-rendering"))]
+            ctx,
+            x,
+            y,
+        );
     }
 }
 
 #[wasm_bindgen]
 pub async fn notify_mouse_scroll(delta: f32) {
     if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
-        mouse::handle_mouse_scroll(scene, ctx, delta);
+        mouse::handle_mouse_scroll(
+            scene,
+            #[cfg(not(feature = "software-rendering"))]
+            ctx,
+            delta,
+        );
     }
 }
 
@@ -391,7 +418,7 @@ pub async fn render_frame() -> JsResult<()> {
         #[cfg(feature = "software-rendering")]
         {
             let size = scene.get_size();
-            
+
             let context = unsafe { CANVAS.as_ref().expect_throw("Canvas not initialized") };
 
             let image_data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
@@ -419,6 +446,9 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
 
     console_error_panic_hook::set_once();
 
+    canvas.set_width(width);
+    canvas.set_height(height);
+
     unsafe {
         let context: Result<Option<Object>, JsValue> = canvas.get_context("2d");
         let context = context.expect("Failed to get context");
@@ -428,6 +458,8 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
 
         CANVAS.replace(SendWrapper::new(context));
     }
+
+    Ok(())
 }
 
 #[cfg(any(feature = "webgl", feature = "webgpu"))]

@@ -14,8 +14,8 @@ crate-type = ["cdylib", "rlib"]
 ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
 console_error_panic_hook = "*"
 wasm-bindgen = { workspace = true }
-nmsr-rendering = { git = "https://github.com/NickAcPT/nmsr-rs", default-features = false, optional = true }
-nmsr-rasterizer-test = { path = "../../../nmsr-rasterizer-test", optional = true }
+nmsr-rendering = { git = "https://github.com/NickAcPT/nmsr-rs", default-features = false }
+nmsr-rasterizer-test = { git = "https://github.com/NickAcPT/nmsr-rasterizer-test", branch = "nmsr-aas/software-render", optional = true }
 nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 # web-sys has to be locked to 0.3.64 because otherwise, wgpu breaks
 web-sys = { version = "=0.3.64", features = ["HtmlCanvasElement"] }
@@ -29,15 +29,15 @@ image = { version = "0", default-features = false, features = ["png"] }
 glam = "0.24"
 
 [features]
-default = ["ears", "software-rendering", "nmsr-rendering?/ears", "nmsr-rasterizer-test?/ears"]
-webgl = ["dep:nmsr-rendering", "wgpu/webgl", "nmsr-rendering/pipeline"]
-webgpu = ["dep:nmsr-rendering", "nmsr-rendering/pipeline"]
+default = ["ears", "nmsr-rendering/ears", "nmsr-rasterizer-test?/ears"]
+webgl = ["wgpu/webgl", "nmsr-rendering/pipeline"]
+webgpu = ["nmsr-rendering/pipeline"]
 software-rendering = ["dep:nmsr-rasterizer-test", "web-sys/CanvasRenderingContext2d", "web-sys/ImageData"]
-ears = ["nmsr-rendering?/ears", "nmsr-player-parts/ears"]
+ears = ["nmsr-rendering/ears", "nmsr-player-parts/ears"]
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = [
-    "-c",
+    "-lmu",
     "--roundtrip",
     "-Oz",
     "--dce",
@@ -72,12 +72,10 @@ wasm-opt = [
     "--gufa-optimizing",
     "-tnh",
     "-uim",
-    "-iit",
     "--dae-optimizing",
     "--code-pushing",
     "--merge-locals",
     "--coalesce-locals-learning",
-    "--avoid-reinterprets",
     "--untee",
     "--type-merging",
     "--simplify-locals-notee",
@@ -86,7 +84,6 @@ wasm-opt = [
     "--simplify-globals-optimizing",
     "--precompute",
     "--precompute-propagate",
-    "--optimize-casts",
     "--multi-memory-lowering",
     "--merge-blocks",
     "--licm",
@@ -95,7 +92,6 @@ wasm-opt = [
     "-cw",
     "-ifwl",
     "--optimize-stack-ir",
-    "-lmu",
     "--ssa",
     "--optimize-for-js",
     "--tuple-optimization",
@@ -103,7 +99,8 @@ wasm-opt = [
     "--cfp",
     "--reorder-locals",
     "--simplify-locals",
-    "--gufa-cast-all",
     "-O4",
     "--vacuum",
+    "--enable-nontrapping-float-to-int",
+    "-ffm",
 ]

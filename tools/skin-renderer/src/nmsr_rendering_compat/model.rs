@@ -22,42 +22,48 @@ use nmsr_rasterizer_test::{
     shader::{ShaderState, SunInformation},
 };
 
-pub struct Scene<'a, M: ArmorMaterial> {
+pub struct Scene<M: ArmorMaterial> {
     camera: Camera,
     lighting: SunInformation,
     size: Size,
     entry: RenderEntry,
-    pub(crate) parts_context: &'a PlayerPartProviderContext<M>,
     parts: Vec<PlayerBodyPartType>,
     shader_states: Vec<ShaderState>,
+    phantom: std::marker::PhantomData<M>,
 }
 
-impl<'a, M: ArmorMaterial> Scene<'a, M> {
+impl<M: ArmorMaterial> Scene<M> {
     pub fn get_size(&self) -> Size {
         self.size
     }
-    
+
     pub fn camera_mut(&mut self) -> &mut Camera {
         &mut self.camera
     }
-    
+
     pub fn sun_information_mut(&mut self) -> &mut SunInformation {
         &mut self.lighting
     }
 }
 
-impl<'a, M: ArmorMaterial + Debug> Debug for Scene<'a, M> {
+impl<M: ArmorMaterial + Debug> Debug for Scene<M> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Scene").field("camera", &self.camera).field("lighting", &self.lighting).field("size", &self.size).field("entry", &self.entry).field("parts_context", &self.parts_context).field("parts", &self.parts).field("shader_states", &self.shader_states).finish()
+        f.debug_struct("Scene")
+            .field("camera", &self.camera)
+            .field("lighting", &self.lighting)
+            .field("size", &self.size)
+            .field("entry", &self.entry)
+            .field("parts", &self.parts)
+            .field("shader_states", &self.shader_states)
+            .finish()
     }
 }
 
-impl<'a, M: ArmorMaterial + Debug> Scene<'a, M> {
+impl<M: ArmorMaterial + Debug> Scene<M> {
     pub fn new(
         mut camera: Camera,
         lighting: SunInformation,
         size: Size,
-        parts_context: &'a PlayerPartProviderContext<M>,
         parts: &[PlayerBodyPartType],
     ) -> Self {
         if let None = camera.get_size() {
@@ -69,14 +75,13 @@ impl<'a, M: ArmorMaterial + Debug> Scene<'a, M> {
             lighting,
             size,
             entry: RenderEntry::new(camera.get_size().unwrap()),
-            parts_context,
             parts: parts.to_vec(),
             shader_states: Vec::new(),
+            phantom: std::marker::PhantomData,
         }
     }
 
-    
-    pub fn set_texture(&mut self, texture: PlayerPartTextureType, image: Arc<RgbaImage>) {
+    pub fn set_texture(&mut self, texture: PlayerPartTextureType, image: Arc<RgbaImage>, parts_context: &PlayerPartProviderContext<M>) {
         let providers = [
             PlayerPartsProvider::Minecraft,
             #[cfg(feature = "ears")]
@@ -88,7 +93,7 @@ impl<'a, M: ArmorMaterial + Debug> Scene<'a, M> {
             .flat_map(|provider| {
                 self.parts
                     .iter()
-                    .flat_map(|part| provider.get_parts(&self.parts_context, *part))
+                    .flat_map(|part| provider.get_parts(parts_context, *part))
             })
             .filter(|p| p.get_texture() == texture)
             .collect::<Vec<Part>>();
@@ -105,9 +110,11 @@ impl<'a, M: ArmorMaterial + Debug> Scene<'a, M> {
             PrimitiveDispatch::Mesh(Mesh::new(parts)),
         ));
     }
-    
+
     pub fn update(&mut self) {
         for state in &mut self.shader_states {
+            state.camera = self.camera;
+            state.sun = self.lighting;
             state.update();
         }
     }
@@ -115,7 +122,7 @@ impl<'a, M: ArmorMaterial + Debug> Scene<'a, M> {
     pub fn render(&mut self) -> Result<(), NMSRRenderingError> {
         self.entry.textures.depth_buffer.fill(1.0);
         self.entry.textures.output.fill(0);
-        
+
         for state in &mut self.shader_states {
             self.entry.draw(state);
         }

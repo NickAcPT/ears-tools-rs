@@ -1227,18 +1227,6 @@ dependencies = [
 [[package]]
 name = "nmsr-player-parts"
 version = "0.1.0"
-dependencies = [
- "ears-rs",
- "glam",
- "itertools",
- "paste",
- "strum",
- "thiserror",
-]
-
-[[package]]
-name = "nmsr-player-parts"
-version = "0.1.0"
 source = "git+https://github.com/NickAcPT/nmsr-rs#90feec6408ada9b5cf00be366373a865ad5dc45a"
 dependencies = [
  "ears-rs",
@@ -1252,31 +1240,13 @@ dependencies = [
 [[package]]
 name = "nmsr-rasterizer-test"
 version = "0.1.0"
+source = "git+https://github.com/NickAcPT/nmsr-rasterizer-test?branch=nmsr-aas/software-render#e621000c14c8f1e0b177c62ad489ffb6150fa004"
 dependencies = [
  "arrayvec",
  "ears-rs",
  "glam",
  "image",
- "nmsr-rendering 0.1.0",
-]
-
-[[package]]
-name = "nmsr-rendering"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bytemuck",
- "derive_more",
- "glam",
- "image",
- "itertools",
- "nmsr-player-parts 0.1.0",
- "paste",
- "strum",
- "thiserror",
- "tokio",
- "tracing",
- "wgpu-types",
+ "nmsr-rendering",
 ]
 
 [[package]]
@@ -1291,7 +1261,7 @@ dependencies = [
  "glam",
  "image",
  "itertools",
- "nmsr-player-parts 0.1.0 (git+https://github.com/NickAcPT/nmsr-rs)",
+ "nmsr-player-parts",
  "paste",
  "smaa",
  "strum",
@@ -1314,7 +1284,7 @@ dependencies = [
  "glam",
  "image",
  "itertools",
- "nmsr-rendering 0.1.0 (git+https://github.com/NickAcPT/nmsr-rs)",
+ "nmsr-rendering",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -1571,11 +1541,10 @@ checksum = "e8cf8e6a8aa66ce33f63993ffc4ea4271eb5b0530a9002db8455ea6050c77bfa"
 
 [[package]]
 name = "proc-macro-crate"
-version = "1.3.1"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f4c021e1093a56626774e81216a4ce732a735e5bad4868a03f3ed65ca0c3919"
+checksum = "7e8366a6159044a37876a2b9817124296703c586a5c92e2c53751fa06d8d43e8"
 dependencies = [
- "once_cell",
  "toml_edit",
 ]
 
@@ -1809,9 +1778,9 @@ dependencies = [
  "glam",
  "image",
  "js-utils",
- "nmsr-player-parts 0.1.0 (git+https://github.com/NickAcPT/nmsr-rs)",
+ "nmsr-player-parts",
  "nmsr-rasterizer-test",
- "nmsr-rendering 0.1.0 (git+https://github.com/NickAcPT/nmsr-rs)",
+ "nmsr-rendering",
  "send_wrapper",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -2029,9 +1998,9 @@ checksum = "3550f4e9685620ac18a50ed434eb3aec30db8ba93b0287467bca5826ea25baf1"
 
 [[package]]
 name = "toml_edit"
-version = "0.19.15"
+version = "0.20.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b5bb770da30e5cbfde35a2d7b9b8a2c4b8ef89548a7a6aeab5c9a576e3e7421"
+checksum = "70f427fce4d84c72b5b732388bf4a9f4531b53f74e2887e3ecb2481f68f66d81"
 dependencies = [
  "indexmap",
  "toml_datetime",

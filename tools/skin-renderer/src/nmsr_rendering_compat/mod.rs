@@ -1,5 +1,5 @@
 mod model;
-pub mod ext;
+pub mod camera;
 
 pub mod high_level {
     pub mod camera {
@@ -17,5 +17,5 @@ pub mod high_level {
 }
 
 pub mod low_level {
-    pub use glam::{Mat4, Vec3, Vec3A};
+    pub use glam::{Mat4, Vec3, Vec3A, EulerRot, Quat};
 }
