@@ -419,18 +419,18 @@ pub async fn render_frame() -> JsResult<()> {
         {
             let size = scene.get_size();
 
-            let context = unsafe { CANVAS.as_ref().expect_throw("Canvas not initialized") };
-
-            let image_data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
+            if let Some(context) = canvas() {
+                let image_data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
                 wasm_bindgen::Clamped(scene.copy_output_texture()),
                 size.width,
                 size.height,
             )
             .expect("Failed to create image data");
 
-            context
-                .put_image_data(&image_data, 0 as f64, 0 as f64)
-                .expect("Failed to put image data");
+                context
+                    .put_image_data(&image_data, 0 as f64, 0 as f64)
+                    .expect("Failed to put image data");
+            }
         }
     }
 
@@ -465,6 +465,8 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
 #[cfg(any(feature = "webgl", feature = "webgpu"))]
 #[wasm_bindgen]
 pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> JsResult<()> {
+    use wasm_bindgen::JsError;
+
     console_error_panic_hook::set_once();
 
     let canvas = SendWrapper::new(canvas);
@@ -482,10 +484,7 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
     let mut context = GraphicsContext::new(GraphicsContextDescriptor {
         backends: Some(backend),
         surface_provider: Box::new(|i| {
-            Some(
-                i.create_surface_from_canvas(canvas.take())
-                    .expect_throw("Failed to create surface from Canvas"),
-            )
+            i.create_surface_from_canvas(canvas.take()).ok()
         }),
         default_size: (width, height),
         texture_format: Some(wgpu::TextureFormat::Rgba8Unorm),
@@ -496,6 +495,10 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
         use_smaa: Some(false),
     })
     .await?;
+
+    if context.surface.is_none() {
+        return Err(JsError::new("Failed to create surface from canvas"));
+    }
 
     {
         if let Ok(config_option) = context.surface_config.as_mut() {

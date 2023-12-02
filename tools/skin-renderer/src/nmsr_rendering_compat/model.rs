@@ -81,7 +81,12 @@ impl<M: ArmorMaterial + Debug> Scene<M> {
         }
     }
 
-    pub fn set_texture(&mut self, texture: PlayerPartTextureType, image: Arc<RgbaImage>, parts_context: &PlayerPartProviderContext<M>) {
+    pub fn set_texture(
+        &mut self,
+        texture: PlayerPartTextureType,
+        image: Arc<RgbaImage>,
+        parts_context: &PlayerPartProviderContext<M>,
+    ) {
         let providers = [
             PlayerPartsProvider::Minecraft,
             #[cfg(feature = "ears")]
