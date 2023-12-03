@@ -1,0 +1,25 @@
+[package]
+name = "alfalfa-inspector"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
+console_error_panic_hook = "*"
+wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+gloo-utils = { version = "0.2", features = ["serde"] }
+js-utils = { workspace = true }
+wasm-bindgen-futures = "0.4.38"
+image = { version = "0", default-features = false, features = ["png"] }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-g", "--roundtrip"]

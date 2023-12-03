@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["tools/js-utils", "tools/ears-eraser", "tools/bbmodel-generator", "tools/skin-renderer"]
+members = ["tools/js-utils", "tools/ears-eraser", "tools/bbmodel-generator", "tools/skin-renderer", "tools/alfalfa-inspector"]
 
 [workspace.package]
 version = "0.1.0"
@@ -29,7 +29,6 @@ js-utils = { path = "tools/js-utils" }
 [profile.release]
 opt-level = 3
 codegen-units = 1
-
 strip = false
 lto = true
 
