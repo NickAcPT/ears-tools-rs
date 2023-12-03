@@ -14,9 +14,10 @@ crate-type = ["cdylib", "rlib"]
 ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
 console_error_panic_hook = "*"
 wasm-bindgen = { workspace = true }
+web-sys = "0.3"
+js-sys = "0.3"
 serde = { workspace = true }
 serde-wasm-bindgen = { workspace = true }
-gloo-utils = { version = "0.2", features = ["serde"] }
 js-utils = { workspace = true }
 wasm-bindgen-futures = "0.4.38"
 image = { version = "0", default-features = false, features = ["png"] }
