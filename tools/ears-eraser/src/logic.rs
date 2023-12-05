@@ -1,13 +1,10 @@
 use std::io::Cursor;
 
-use ears_rs::alfalfa::{
-    utils::EraseRegionsProvider,
-    AlfalfaData,
-};
+use ears_rs::alfalfa::{utils::EraseRegionsProvider, AlfalfaData};
 
-use image::ImageFormat;
 use crate::{errors::*, models::EarsImageWorkspace};
 pub use ears_rs;
+use image::ImageFormat;
 
 #[inline(never)]
 pub fn decode_ears_image(skin_bytes: &[u8]) -> Result<EarsImageWorkspace> {
@@ -23,10 +20,7 @@ pub fn decode_ears_image(skin_bytes: &[u8]) -> Result<EarsImageWorkspace> {
         .map(|r| r.into())
         .collect();
 
-    Ok(EarsImageWorkspace {
-        alfalfa,
-        regions,
-    })
+    Ok(EarsImageWorkspace { alfalfa, regions })
 }
 
 #[inline(never)]
