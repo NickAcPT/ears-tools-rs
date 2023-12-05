@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["tools/js-utils", "tools/ears-eraser", "tools/bbmodel-generator", "tools/skin-renderer", "tools/alfalfa-inspector"]
+members = ["tools/js-utils", "tools/ears-eraser", "tools/bbmodel-generator", "tools/skin-renderer", "tools/alfalfa-inspector", "tools/ears-manipulator"]
 
 [workspace.package]
 version = "0.1.0"

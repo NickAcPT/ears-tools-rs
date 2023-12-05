@@ -625,9 +625,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ears-manipulator"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "ears-rs",
+ "image",
+ "js-sys",
+ "js-utils",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_repr",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "ears-rs"
 version = "0.2.0"
-source = "git+https://github.com/NickAcPT/ears-rs#e6210003ebbf4fe0411aa8e18a1f32e4ebc3e059"
+source = "git+https://github.com/NickAcPT/ears-rs#e6210000040945183d07de4e2f8eb18cca3a73e7"
 dependencies = [
  "byteorder",
  "enum-ordinalize",
@@ -1770,6 +1787,17 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "serde_repr"
+version = "0.1.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3081f5ffbb02284dda55132aa26daecedd7372a42417bbbab6f14ab7d6bb9145"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -1,0 +1,27 @@
+[package]
+name = "ears-manipulator"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ears-rs = { workspace = true }
+console_error_panic_hook = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true }
+js-sys = { workspace = true }
+serde = { workspace = true }
+serde_repr = "0.1"
+serde-wasm-bindgen = { workspace = true }
+js-utils = { workspace = true }
+wasm-bindgen-futures =  { workspace = true }
+image = { workspace = true, default-features = false, features = ["png"] }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-g", "--roundtrip"]
