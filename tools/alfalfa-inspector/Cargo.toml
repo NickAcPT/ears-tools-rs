@@ -11,7 +11,7 @@ repository.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
+ears-rs = { workspace = true }
 console_error_panic_hook = "*"
 wasm-bindgen = { workspace = true }
 web-sys = "0.3"
