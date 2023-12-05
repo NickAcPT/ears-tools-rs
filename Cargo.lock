@@ -126,30 +126,30 @@ checksum = "7079075b41f533b8c61d2a4d073c4676e1f8b249ff94a393b0595db304e0dd87"
 
 [[package]]
 name = "anstyle-parse"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "317b9a89c1868f5ea6ff1d9539a69f45dffc21ce321ac1fd1160dfa48c8e2140"
+checksum = "c75ac65da39e5fe5ab759307499ddad880d724eed2f6ce5b5e8a26f4f387928c"
 dependencies = [
  "utf8parse",
 ]
 
 [[package]]
 name = "anstyle-query"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ca11d4be1bab0c8bc8734a9aa7bf4ee8316d462a08c6ac5052f888fef5b494b"
+checksum = "a3a318f1f38d2418400f8209655bfd825785afd25aa30bb7ba6cc792e4596748"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
 name = "anstyle-wincon"
-version = "3.0.1"
+version = "3.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0699d10d2f4d628a98ee7b57b289abbc98ff3bad977cb3152709d4bf2330628"
+checksum = "1cd54b81ec8d6180e24654d0b371ad22fc3dd083b6ff8ba325b72e00c87660a7"
 dependencies = [
  "anstyle",
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -380,9 +380,9 @@ checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
 
 [[package]]
 name = "clap"
-version = "4.4.10"
+version = "4.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41fffed7514f420abec6d183b1d3acfd9099c79c3a10a06ade4f8203f1411272"
+checksum = "bfaff671f6b22ca62406885ece523383b9b64022e341e53e009a62ebc47a45f2"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -390,9 +390,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.4.9"
+version = "4.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63361bae7eef3771745f02d8d892bec2fee5f6e34af316ba556e7f97a7069ff1"
+checksum = "a216b506622bb1d316cd51328dce24e07bdff4a6128a47c7e7fad11878d5adbb"
 dependencies = [
  "anstream",
  "anstyle",
@@ -458,9 +458,9 @@ dependencies = [
 
 [[package]]
 name = "concurrent-queue"
-version = "2.3.0"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f057a694a54f12365049b0958a1685bb52d567f5593b355fbf685838e873d400"
+checksum = "d16048cd947b08fa32c24458a22f5dc5e835264f689f4f5653210c69fd107363"
 dependencies = [
  "crossbeam-utils",
 ]
@@ -627,7 +627,7 @@ dependencies = [
 [[package]]
 name = "ears-rs"
 version = "0.2.0"
-source = "git+https://github.com/NickAcPT/ears-rs#e6210008daa1ca431fd98002d89c80cdd140775a"
+source = "git+https://github.com/NickAcPT/ears-rs#e6210003ebbf4fe0411aa8e18a1f32e4ebc3e059"
 dependencies = [
  "byteorder",
  "enum-ordinalize",
@@ -1242,18 +1242,6 @@ dependencies = [
 [[package]]
 name = "nmsr-player-parts"
 version = "0.1.0"
-dependencies = [
- "ears-rs",
- "glam",
- "itertools",
- "paste",
- "strum",
- "thiserror",
-]
-
-[[package]]
-name = "nmsr-player-parts"
-version = "0.1.0"
 source = "git+https://github.com/NickAcPT/nmsr-rs#e621000ecc44e9751e45b0691d42d25434c0baa0"
 dependencies = [
  "ears-rs",
@@ -1267,34 +1255,13 @@ dependencies = [
 [[package]]
 name = "nmsr-rasterizer-test"
 version = "0.1.0"
+source = "git+https://github.com/NickAcPT/nmsr-rasterizer-test?branch=nmsr-aas/software-render#e62100094c255ea93e03b91d8f47a57f0081307b"
 dependencies = [
  "arrayvec",
  "ears-rs",
  "glam",
  "image",
- "nmsr-rendering 0.1.0",
-]
-
-[[package]]
-name = "nmsr-rendering"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bytemuck",
- "deadpool",
- "derive_more",
- "glam",
- "image",
- "itertools",
- "nmsr-player-parts 0.1.0",
- "paste",
- "smaa",
- "strum",
- "thiserror",
- "tokio",
- "tracing",
- "wgpu",
- "wgpu-types",
+ "nmsr-rendering",
 ]
 
 [[package]]
@@ -1304,16 +1271,19 @@ source = "git+https://github.com/NickAcPT/nmsr-rs#e621000ecc44e9751e45b0691d42d2
 dependencies = [
  "async-trait",
  "bytemuck",
+ "deadpool",
  "derive_more",
  "glam",
  "image",
  "itertools",
- "nmsr-player-parts 0.1.0 (git+https://github.com/NickAcPT/nmsr-rs)",
+ "nmsr-player-parts",
  "paste",
+ "smaa",
  "strum",
  "thiserror",
  "tokio",
  "tracing",
+ "wgpu",
  "wgpu-types",
 ]
 
@@ -1329,7 +1299,7 @@ dependencies = [
  "glam",
  "image",
  "itertools",
- "nmsr-rendering 0.1.0 (git+https://github.com/NickAcPT/nmsr-rs)",
+ "nmsr-rendering",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -1433,9 +1403,9 @@ dependencies = [
 
 [[package]]
 name = "objc-sys"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99e1d07c6eab1ce8b6382b8e3c7246fe117ff3f8b34be065f5ebace6749fe845"
+checksum = "c7c71324e4180d0899963fc83d9d241ac39e699609fc1025a850aadac8257459"
 
 [[package]]
 name = "objc2"
@@ -1817,9 +1787,9 @@ dependencies = [
  "glam",
  "image",
  "js-utils",
- "nmsr-player-parts 0.1.0",
+ "nmsr-player-parts",
  "nmsr-rasterizer-test",
- "nmsr-rendering 0.1.0",
+ "nmsr-rendering",
  "send_wrapper",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -1996,9 +1966,9 @@ dependencies = [
 
 [[package]]
 name = "tiny-skia"
-version = "0.11.2"
+version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b72a92a05db376db09fe6d50b7948d106011761c05a6a45e23e17ee9b556222"
+checksum = "b6a067b809476893fce6a254cf285850ff69c847e6cfbade6a20b655b6c7e80d"
 dependencies = [
  "arrayref",
  "arrayvec",
@@ -2010,9 +1980,9 @@ dependencies = [
 
 [[package]]
 name = "tiny-skia-path"
-version = "0.11.2"
+version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ac3865b9708fc7e1961a65c3a4fa55e984272f33092d3c859929f887fceb647"
+checksum = "5de35e8a90052baaaf61f171680ac2f8e925a1e43ea9d2e3a00514772250e541"
 dependencies = [
  "arrayref",
  "bytemuck",
@@ -2755,9 +2725,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.5.19"
+version = "0.5.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "829846f3e3db426d4cee4510841b71a8e58aa2a76b1132579487ae430ccd9c7b"
+checksum = "0383266b19108dfc6314a56047aa545a1b4d1be60e799b4dbdd407b56402704b"
 dependencies = [
  "memchr",
 ]
@@ -2841,18 +2811,18 @@ checksum = "9828b178da53440fa9c766a3d2f73f7cf5d0ac1fe3980c1e5018d899fd19e07b"
 
 [[package]]
 name = "zerocopy"
-version = "0.7.28"
+version = "0.7.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d6f15f7ade05d2a4935e34a457b936c23dc70a05cc1d97133dc99e7a3fe0f0e"
+checksum = "5d075cf85bbb114e933343e087b92f2146bac0d55b534cbb8188becf0039948e"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.7.28"
+version = "0.7.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbbad221e3f78500350ecbd7dfa4e63ef945c05f4c61cb7f4d3f84cd0bba649b"
+checksum = "86cd5ca076997b97ef09d3ad65efe811fa68c9e874cb636ccb211223a813b0c2"
 dependencies = [
  "proc-macro2",
  "quote",
