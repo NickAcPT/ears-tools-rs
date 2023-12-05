@@ -11,12 +11,12 @@ repository.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
+ears-rs = { workspace = true }
 console_error_panic_hook = "*"
 wasm-bindgen = { workspace = true }
-nmsr-rendering = { path = "D:\\IDEs\\CLionProjects\\nmsr-rs\\nmsr-3d-renderer\\nmsr-rendering", default-features = false }
-nmsr-rasterizer-test = { path = "D:\\IDEs\\CLionProjects\\nmsr-rasterizer-test", optional = true }
-nmsr-player-parts = { path = "D:\\IDEs\\CLionProjects\\nmsr-rs\\nmsr-3d-renderer\\nmsr-player-parts" }
+nmsr-rendering = { git = "https://github.com/NickAcPT/nmsr-rs", default-features = false }
+nmsr-rasterizer-test = { git = "https://github.com/NickAcPT/nmsr-rasterizer-test", branch = "nmsr-aas/software-render", optional = true }
+nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 # web-sys has to be locked to 0.3.64 because otherwise, wgpu breaks
 web-sys = { version = "=0.3.64", features = ["HtmlCanvasElement"] }
 # We're being spicy here by asking it to be send and sync..
