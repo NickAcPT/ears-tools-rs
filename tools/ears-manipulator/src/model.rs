@@ -81,8 +81,11 @@ export enum WasmWingsAnimations {
 
 use ears_rs::features::data::{ear::{EarMode, EarAnchor}, tail::{TailMode, TailData}, wing::{WingMode, WingData}, snout::SnoutData};
 use serde::Deserialize;
+use serde_repr::Deserialize_repr;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+
+#[repr(u8)]
 pub(crate) enum WasmEarsMode {
     None,
     Above,
@@ -113,7 +116,9 @@ impl From<WasmEarsMode> for EarMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+
+#[repr(u8)]
 pub(crate) enum WasmEarsAnchor {
     Center,
     Front,
@@ -130,13 +135,17 @@ impl From<WasmEarsAnchor> for EarAnchor {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+
+#[repr(u8)]
 pub(crate) enum WasmProtrusion {
     Claws,
     Horns,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+
+#[repr(u8)]
 pub(crate) enum WasmTailMode {
     None,
     Down,
@@ -157,7 +166,9 @@ impl From<WasmTailMode> for TailMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+
+#[repr(u8)]
 pub(crate) enum WasmWingsMode {
     None,
     SymmetricDual,
@@ -178,13 +189,17 @@ impl From<WasmWingsMode> for WingMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+
+#[repr(u8)]
 pub(crate) enum WasmWingsAnimations {
     Normal,
     None,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+
+#[repr(u8)]
 pub(crate) enum WasmSnoutStatus {
     Disabled,
     Enabled,
