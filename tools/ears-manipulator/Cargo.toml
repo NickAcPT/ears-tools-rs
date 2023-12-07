@@ -22,6 +22,7 @@ serde-wasm-bindgen = { workspace = true }
 js-utils = { workspace = true }
 wasm-bindgen-futures =  { workspace = true }
 image = { workspace = true, default-features = false, features = ["png"] }
+serde_bytes = "0"
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ["-g", "--roundtrip"]

@@ -4,6 +4,14 @@
     tail: TailSettings;
     snout?: SnoutSettings;
     wings: WingSettings;
+    cape?: Uint8Array;
+    chestSize: number;
+    alfalfa?: WasmAlfalfaData;
+}
+
+export interface WasmAlfalfaData {
+    version: number;
+    data: Record<string, Uint8Array>;
 }
 
 export interface WasmEarsSettings {
@@ -32,6 +40,7 @@ export interface WasmSnoutSettings {
 export interface WasmWingSettings {
     mode: WingsMode;
     animations: WingsAnimations;
+    wings: Uint8Array;
 }
 
 export enum WasmEarsMode {
@@ -79,16 +88,22 @@ export enum WasmWingsAnimations {
     None
 } */
 
-use ears_rs::features::{
-    data::{
-        ear::{EarAnchor, EarMode},
-        snout::SnoutData,
-        tail::{TailData, TailMode},
-        wing::{WingData, WingMode},
+use std::collections::HashMap;
+
+use ears_rs::{
+    alfalfa::{AlfalfaData, AlfalfaDataKey},
+    features::{
+        data::{
+            ear::{EarAnchor, EarMode},
+            snout::SnoutData,
+            tail::{TailData, TailMode},
+            wing::{WingData, WingMode},
+        },
+        EarsFeatures,
     },
-    EarsFeatures,
 };
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
@@ -265,16 +280,17 @@ pub(crate) struct WasmSnoutSettings {
     pub(crate) offset: u8,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) struct WasmWingSettings {
     pub(crate) mode: WasmWingsMode,
     pub(crate) animations: WasmWingsAnimations,
+    pub(crate) wings: Option<ByteBuf>,
 }
 
 impl From<WasmWingSettings> for WingData {
     fn from(settings: WasmWingSettings) -> Self {
         Self {
-            mode: settings.mode.into(),
+            mode: settings.wings.map(|_| settings.mode.into()).unwrap_or(WingMode::None),
             animated: settings.animations == WasmWingsAnimations::Normal,
         }
     }
@@ -289,6 +305,7 @@ impl From<WingData> for WasmWingSettings {
             } else {
                 WasmWingsAnimations::None
             },
+            wings: None,
         }
     }
 }
@@ -349,12 +366,48 @@ pub(crate) struct WasmEarsSettings {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub(crate) struct WasmAlfalfaData {
+    pub(crate) version: u8,
+    pub(crate) data: HashMap<String, ByteBuf>,
+}
+
+impl From<WasmAlfalfaData> for AlfalfaData {
+    fn from(value: WasmAlfalfaData) -> Self {
+        Self::new_raw(value.version, value.data.into_iter().map(|(k, v)| (k, v.into_vec())).collect())
+    }
+}
+
+impl From<AlfalfaData> for WasmAlfalfaData {
+    fn from(value: AlfalfaData) -> Self {
+        let (version, data) = value.into_raw();
+        
+        Self {
+            version,
+            data: data.into_iter().map(|(k, v)| (k, ByteBuf::from(v))).collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) struct WasmEarsFeatures {
     pub(crate) ears: WasmEarsSettings,
     pub(crate) protrusions: Vec<WasmProtrusion>,
     pub(crate) tail: WasmTailSettings,
     pub(crate) snout: Option<WasmSnoutSettings>,
     pub(crate) wings: WasmWingSettings,
+    pub(crate) cape: Option<ByteBuf>,
+    #[serde(rename = "chestSize")]
+    pub(crate) chest_size: f32,
+    pub(crate) alfalfa: Option<WasmAlfalfaData>,
+}
+
+impl WasmEarsFeatures {
+    pub(crate) fn with_alfalfa(self, alfalfa: Option<AlfalfaData>) -> Self {
+        Self {
+            alfalfa: alfalfa.map(|a| a.into()),
+            ..self
+        }
+    }
 }
 
 impl From<WasmEarsFeatures> for ears_rs::features::EarsFeatures {
@@ -364,14 +417,29 @@ impl From<WasmEarsFeatures> for ears_rs::features::EarsFeatures {
             ear_anchor: features.ears.anchor.into(),
             tail: Some(features.tail.into()).filter(|_| features.tail.mode != WasmTailMode::None),
             snout: features.snout.map(|s| s.into()),
-            wing: Some(features.wings.into())
-                .filter(|_| features.wings.mode != WasmWingsMode::None),
+            wing: Some(features.wings.into()).filter(|w: &WingData| w.mode != WingMode::None),
             claws: features.protrusions.contains(&WasmProtrusion::Claws),
             horn: features.protrusions.contains(&WasmProtrusion::Horns),
-            chest_size: 0.0,     // TODO
-            cape_enabled: false, // TODO
-            emissive: false,     // TODO
+            chest_size: features.chest_size,
+            cape_enabled: features.cape.is_some(),
+            emissive: false, // TODO
         }
+    }
+}
+
+impl From<WasmEarsFeatures> for AlfalfaData {
+    fn from(value: WasmEarsFeatures) -> Self {
+        let mut alfalfa = value.alfalfa.map(|a| a.into()).unwrap_or_else(AlfalfaData::new);
+
+        if let Some(cape) = value.cape {
+            alfalfa.set_data(AlfalfaDataKey::Cape, cape.to_vec());
+        }
+
+        if let Some(wings) = value.wings.wings {
+            alfalfa.set_data(AlfalfaDataKey::Wings, wings.to_vec());
+        }
+
+        alfalfa
     }
 }
 
@@ -401,8 +469,11 @@ impl From<EarsFeatures> for WasmEarsFeatures {
             wings: features.wing.map(|w| w.into()).unwrap_or(WasmWingSettings {
                 mode: WasmWingsMode::None,
                 animations: WasmWingsAnimations::None,
+                wings: None,
             }),
-            // TODO: chest_size, cape_enabled, emissive
+            cape: None,
+            chest_size: features.chest_size,
+            alfalfa: None,
         }
     }
 }
