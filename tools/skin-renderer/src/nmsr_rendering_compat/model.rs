@@ -125,7 +125,7 @@ impl<M: ArmorMaterial + Debug> Scene<M> {
     }
 
     pub fn render(&mut self) -> Result<(), NMSRRenderingError> {
-        self.entry.textures.depth_buffer.fill(1.0);
+        self.entry.textures.clear_depth();
         self.entry.textures.output.fill(0);
 
         for state in &mut self.shader_states {
