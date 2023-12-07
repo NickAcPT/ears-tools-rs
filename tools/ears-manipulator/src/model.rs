@@ -79,12 +79,19 @@ export enum WasmWingsAnimations {
     None
 } */
 
-use ears_rs::features::data::{ear::{EarMode, EarAnchor}, tail::{TailMode, TailData}, wing::{WingMode, WingData}, snout::SnoutData};
-use serde::Deserialize;
-use serde_repr::Deserialize_repr;
+use ears_rs::features::{
+    data::{
+        ear::{EarAnchor, EarMode},
+        snout::SnoutData,
+        tail::{TailData, TailMode},
+        wing::{WingData, WingMode},
+    },
+    EarsFeatures,
+};
+use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
-
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmEarsMode {
     None,
@@ -116,8 +123,24 @@ impl From<WasmEarsMode> for EarMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+impl From<EarMode> for WasmEarsMode {
+    fn from(mode: EarMode) -> Self {
+        match mode {
+            EarMode::None => WasmEarsMode::None,
+            EarMode::Above => WasmEarsMode::Above,
+            EarMode::Sides => WasmEarsMode::Sides,
+            EarMode::Behind => WasmEarsMode::Behind,
+            EarMode::Around => WasmEarsMode::Around,
+            EarMode::Floppy => WasmEarsMode::Floppy,
+            EarMode::Out => WasmEarsMode::Out,
+            EarMode::Cross => WasmEarsMode::Cross,
+            EarMode::Tall => WasmEarsMode::Tall,
+            EarMode::TallCross => WasmEarsMode::TallCross,
+        }
+    }
+}
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmEarsAnchor {
     Center,
@@ -135,16 +158,24 @@ impl From<WasmEarsAnchor> for EarAnchor {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+impl From<EarAnchor> for WasmEarsAnchor {
+    fn from(anchor: EarAnchor) -> Self {
+        match anchor {
+            EarAnchor::Center => WasmEarsAnchor::Center,
+            EarAnchor::Front => WasmEarsAnchor::Front,
+            EarAnchor::Back => WasmEarsAnchor::Back,
+        }
+    }
+}
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmProtrusion {
     Claws,
     Horns,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
-
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmTailMode {
     None,
@@ -166,8 +197,19 @@ impl From<WasmTailMode> for TailMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+impl From<TailMode> for WasmTailMode {
+    fn from(mode: TailMode) -> Self {
+        match mode {
+            TailMode::None => WasmTailMode::None,
+            TailMode::Down => WasmTailMode::Down,
+            TailMode::Back => WasmTailMode::Back,
+            TailMode::Up => WasmTailMode::Up,
+            TailMode::Vertical => WasmTailMode::Vertical,
+        }
+    }
+}
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmWingsMode {
     None,
@@ -189,23 +231,33 @@ impl From<WasmWingsMode> for WingMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
+impl From<WingMode> for WasmWingsMode {
+    fn from(mode: WingMode) -> Self {
+        match mode {
+            WingMode::None => WasmWingsMode::None,
+            WingMode::SymmetricDual => WasmWingsMode::SymmetricDual,
+            WingMode::SymmetricSingle => WasmWingsMode::SymmetricSingle,
+            WingMode::AsymmetricL => WasmWingsMode::AsymmetricSingleLeft,
+            WingMode::AsymmetricR => WasmWingsMode::AsymmetricSingleRight,
+        }
+    }
+}
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmWingsAnimations {
     Normal,
     None,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
-
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmSnoutStatus {
     Disabled,
     Enabled,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub(crate) struct WasmSnoutSettings {
     pub(crate) width: u8,
     pub(crate) height: u8,
@@ -213,7 +265,7 @@ pub(crate) struct WasmSnoutSettings {
     pub(crate) offset: u8,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub(crate) struct WasmWingSettings {
     pub(crate) mode: WasmWingsMode,
     pub(crate) animations: WasmWingsAnimations,
@@ -228,7 +280,20 @@ impl From<WasmWingSettings> for WingData {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+impl From<WingData> for WasmWingSettings {
+    fn from(data: WingData) -> Self {
+        Self {
+            mode: data.mode.into(),
+            animations: if data.animated {
+                WasmWingsAnimations::Normal
+            } else {
+                WasmWingsAnimations::None
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub(crate) struct WasmTailSettings {
     pub(crate) mode: WasmTailMode,
     pub(crate) segments: u8,
@@ -245,6 +310,16 @@ impl From<WasmTailSettings> for TailData {
     }
 }
 
+impl From<TailData> for WasmTailSettings {
+    fn from(data: TailData) -> Self {
+        Self {
+            mode: data.mode.into(),
+            segments: data.segments,
+            bends: data.bends,
+        }
+    }
+}
+
 impl From<WasmSnoutSettings> for SnoutData {
     fn from(settings: WasmSnoutSettings) -> Self {
         Self {
@@ -256,13 +331,24 @@ impl From<WasmSnoutSettings> for SnoutData {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+impl From<SnoutData> for WasmSnoutSettings {
+    fn from(data: SnoutData) -> Self {
+        Self {
+            offset: data.offset,
+            width: data.width,
+            height: data.height,
+            length: data.depth,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub(crate) struct WasmEarsSettings {
     pub(crate) mode: WasmEarsMode,
     pub(crate) anchor: WasmEarsAnchor,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) struct WasmEarsFeatures {
     pub(crate) ears: WasmEarsSettings,
     pub(crate) protrusions: Vec<WasmProtrusion>,
@@ -278,12 +364,45 @@ impl From<WasmEarsFeatures> for ears_rs::features::EarsFeatures {
             ear_anchor: features.ears.anchor.into(),
             tail: Some(features.tail.into()).filter(|_| features.tail.mode != WasmTailMode::None),
             snout: features.snout.map(|s| s.into()),
-            wing: Some(features.wings.into()).filter(|_| features.wings.mode != WasmWingsMode::None),
+            wing: Some(features.wings.into())
+                .filter(|_| features.wings.mode != WasmWingsMode::None),
             claws: features.protrusions.contains(&WasmProtrusion::Claws),
             horn: features.protrusions.contains(&WasmProtrusion::Horns),
-            chest_size: 0.0, // TODO
+            chest_size: 0.0,     // TODO
             cape_enabled: false, // TODO
-            emissive: false, // TODO
+            emissive: false,     // TODO
+        }
+    }
+}
+
+impl From<EarsFeatures> for WasmEarsFeatures {
+    fn from(features: EarsFeatures) -> Self {
+        Self {
+            ears: WasmEarsSettings {
+                mode: features.ear_mode.into(),
+                anchor: features.ear_anchor.into(),
+            },
+            protrusions: {
+                let mut protrusions = Vec::new();
+                if features.claws {
+                    protrusions.push(WasmProtrusion::Claws);
+                }
+                if features.horn {
+                    protrusions.push(WasmProtrusion::Horns);
+                }
+                protrusions
+            },
+            tail: features.tail.map(|t| t.into()).unwrap_or(WasmTailSettings {
+                mode: WasmTailMode::None,
+                segments: 0,
+                bends: [0.0; 4],
+            }),
+            snout: features.snout.map(|s| s.into()),
+            wings: features.wing.map(|w| w.into()).unwrap_or(WasmWingSettings {
+                mode: WasmWingsMode::None,
+                animations: WasmWingsAnimations::None,
+            }),
+            // TODO: chest_size, cape_enabled, emissive
         }
     }
 }
