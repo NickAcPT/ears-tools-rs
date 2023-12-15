@@ -15,7 +15,7 @@ ears-rs = { workspace = true }
 console_error_panic_hook = "*"
 wasm-bindgen = { workspace = true }
 nmsr-rendering = { git = "https://github.com/NickAcPT/nmsr-rs", default-features = false }
-nmsr-rasterizer-test = { git = "https://github.com/NickAcPT/nmsr-rasterizer-test", branch = "nmsr-aas/software-render", optional = true }
+nmsr-software-rasterizer = { git = "https://github.com/NickAcPT/nmsr-rs", optional = true }
 nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 # web-sys has to be locked to 0.3.64 because otherwise, wgpu breaks
 web-sys = { version = "=0.3.64", features = ["HtmlCanvasElement"] }
@@ -31,11 +31,11 @@ image = { version = "0", default-features = false, features = ["png"] }
 glam = "0.24"
 
 [features]
-default = ["ears", "nmsr-rendering/ears", "nmsr-rasterizer-test?/ears"]
+default = ["ears", "nmsr-rendering/ears", "nmsr-software-rasterizer?/ears"]
 webgl = ["dep:wgpu", "wgpu/webgl", "nmsr-rendering/pipeline"]
 webgpu = ["dep:wgpu", "nmsr-rendering/pipeline"]
 software-rendering = [
-    "dep:nmsr-rasterizer-test",
+    "dep:nmsr-software-rasterizer",
     "web-sys/CanvasRenderingContext2d",
     "web-sys/ImageData",
 ]
