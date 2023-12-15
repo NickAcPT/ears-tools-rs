@@ -93,4 +93,5 @@ wasm-opt = [
     "--gufa-cast-all",
     "-O4",
     "--vacuum",
+    "-Oz",
 ]

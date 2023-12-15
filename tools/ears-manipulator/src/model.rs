@@ -290,7 +290,10 @@ pub(crate) struct WasmWingSettings {
 impl From<WasmWingSettings> for WingData {
     fn from(settings: WasmWingSettings) -> Self {
         Self {
-            mode: settings.wings.map(|_| settings.mode.into()).unwrap_or(WingMode::None),
+            mode: settings
+                .wings
+                .map(|_| settings.mode.into())
+                .unwrap_or(WingMode::None),
             animated: settings.animations == WasmWingsAnimations::Normal,
         }
     }
@@ -373,17 +376,27 @@ pub(crate) struct WasmAlfalfaData {
 
 impl From<WasmAlfalfaData> for AlfalfaData {
     fn from(value: WasmAlfalfaData) -> Self {
-        Self::new_raw(value.version, value.data.into_iter().map(|(k, v)| (k, v.into_vec())).collect())
+        Self::new_raw(
+            value.version,
+            value
+                .data
+                .into_iter()
+                .map(|(k, v)| (k, v.into_vec()))
+                .collect(),
+        )
     }
 }
 
 impl From<AlfalfaData> for WasmAlfalfaData {
     fn from(value: AlfalfaData) -> Self {
         let (version, data) = value.into_raw();
-        
+
         Self {
             version,
-            data: data.into_iter().map(|(k, v)| (k, ByteBuf::from(v))).collect(),
+            data: data
+                .into_iter()
+                .map(|(k, v)| (k, ByteBuf::from(v)))
+                .collect(),
         }
     }
 }
@@ -404,6 +417,15 @@ pub(crate) struct WasmEarsFeatures {
 impl WasmEarsFeatures {
     pub(crate) fn with_alfalfa(self, alfalfa: Option<AlfalfaData>) -> Self {
         Self {
+            wings: WasmWingSettings {
+                wings: alfalfa
+                    .as_ref()
+                    .and_then(|a| a.get_data(AlfalfaDataKey::Wings).map(|w| ByteBuf::from(w))),
+                ..self.wings
+            },
+            cape: alfalfa
+                .as_ref()
+                .and_then(|a| a.get_data(AlfalfaDataKey::Cape).map(|w| ByteBuf::from(w))),
             alfalfa: alfalfa.map(|a| a.into()),
             ..self
         }
@@ -429,7 +451,10 @@ impl From<WasmEarsFeatures> for ears_rs::features::EarsFeatures {
 
 impl From<WasmEarsFeatures> for AlfalfaData {
     fn from(value: WasmEarsFeatures) -> Self {
-        let mut alfalfa = value.alfalfa.map(|a| a.into()).unwrap_or_else(AlfalfaData::new);
+        let mut alfalfa = value
+            .alfalfa
+            .map(|a| a.into())
+            .unwrap_or_else(AlfalfaData::new);
 
         if let Some(cape) = value.cape {
             alfalfa.set_data(AlfalfaDataKey::Cape, cape.to_vec());
