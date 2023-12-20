@@ -166,9 +166,9 @@ checksum = "96d30a06541fbafbc7f82ed10c06164cfbd2c401138f6addd8404629c4b16711"
 
 [[package]]
 name = "as-raw-xcb-connection"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d5f312b0a56c5cdf967c0aeb67f6289603354951683bc97ddc595ab974ba9aa"
+checksum = "175571dd1d178ced59193a6fc02dde1b972eb0bc56c892cde9beeceac5bf0f6b"
 
 [[package]]
 name = "ash"
@@ -1138,9 +1138,9 @@ checksum = "f665ee40bc4a3c5590afb1e9677db74a508659dfd71e126420da8274909a0167"
 
 [[package]]
 name = "memmap2"
-version = "0.9.0"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deaba38d7abf1d4cca21cc89e932e542ba2b9258664d2a9ef0e61512039c9375"
+checksum = "45fd3a57831bf88bc63f8cebc0cf956116276e97fef3966103e96416209f7c92"
 dependencies = [
  "libc",
 ]
@@ -1254,7 +1254,7 @@ dependencies = [
 [[package]]
 name = "nmsr-player-parts"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#3b9a94efc23168ffff88107c71c96e9b0c26cf7a"
+source = "git+https://github.com/NickAcPT/nmsr-rs#786fb6903eafcb05ff1cc2e1b2ad8f7312a1d26d"
 dependencies = [
  "ears-rs",
  "glam",
@@ -1267,7 +1267,7 @@ dependencies = [
 [[package]]
 name = "nmsr-rendering"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#3b9a94efc23168ffff88107c71c96e9b0c26cf7a"
+source = "git+https://github.com/NickAcPT/nmsr-rs#786fb6903eafcb05ff1cc2e1b2ad8f7312a1d26d"
 dependencies = [
  "async-trait",
  "bytemuck",
@@ -1290,7 +1290,7 @@ dependencies = [
 [[package]]
 name = "nmsr-rendering-blockbench-model-generator-experiment"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#3b9a94efc23168ffff88107c71c96e9b0c26cf7a"
+source = "git+https://github.com/NickAcPT/nmsr-rs#786fb6903eafcb05ff1cc2e1b2ad8f7312a1d26d"
 dependencies = [
  "base64",
  "clap",
@@ -1312,7 +1312,7 @@ dependencies = [
 [[package]]
 name = "nmsr-software-rasterizer"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#3b9a94efc23168ffff88107c71c96e9b0c26cf7a"
+source = "git+https://github.com/NickAcPT/nmsr-rs#786fb6903eafcb05ff1cc2e1b2ad8f7312a1d26d"
 dependencies = [
  "arrayvec",
  "ears-rs",
@@ -1577,9 +1577,9 @@ dependencies = [
 
 [[package]]
 name = "profiling"
-version = "1.0.12"
+version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1de09527cd2ea2c2d59fb6c2f8c1ab8c71709ed9d1b6d60b0e1c9fbb6fdcb33c"
+checksum = "d135ede8821cf6376eb7a64148901e1690b788c11ae94dc297ae917dbc91dc0e"
 
 [[package]]
 name = "quick-xml"
@@ -1969,18 +1969,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.50"
+version = "1.0.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9a7210f5c9a7156bb50aa36aed4c95afb51df0df00713949448cf9e97d382d2"
+checksum = "f11c217e1416d6f036b870f14e0413d480dbf28edbee1f877abaf0206af43bb7"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.50"
+version = "1.0.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "266b2e40bc00e5a6c09c3584011e08b06f123c00362c92b975ba9843aaaa14b8"
+checksum = "01742297787513b79cf8e29d1056ede1313e2420b7b3b15d0a768b4921f549df"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2014,9 +2014,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.35.0"
+version = "1.35.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "841d45b238a16291a4e1584e61820b8ae57d696cc5015c459c229ccc6990cc1c"
+checksum = "c89b4efa943be685f629b149f53829423f8f5531ea21249408e8e2f8671ec104"
 dependencies = [
  "backtrace",
  "pin-project-lite",
@@ -2748,9 +2748,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.5.28"
+version = "0.5.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c830786f7720c2fd27a1a0e27a709dbd3c4d009b56d098fc742d4f4eab91fe2"
+checksum = "9b5c3db89721d50d0e2a673f5043fc4722f76dcc352d7b1ab8b8288bed4ed2c5"
 dependencies = [
  "memchr",
 ]
@@ -2825,9 +2825,9 @@ checksum = "0fcb9cbac069e033553e8bb871be2fbdffcab578eb25bd0f7c508cedc6dcd75a"
 
 [[package]]
 name = "xxhash-rust"
-version = "0.8.7"
+version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9828b178da53440fa9c766a3d2f73f7cf5d0ac1fe3980c1e5018d899fd19e07b"
+checksum = "53be06678ed9e83edb1745eb72efc0bbcd7b5c3c35711a860906aed827a13d61"
 
 [[package]]
 name = "zerocopy"
