@@ -1,4 +1,9 @@
-/* export interface WasmEarsFeatures {
+/* export enum TextureSource {
+    SampleSkin,
+    YourSkin,
+}
+
+export interface WasmEarsFeatures {
     ears: EarsSettings;
     protrusions: Set<Protrusion>;
     tail: TailSettings;
@@ -17,12 +22,14 @@ export interface WasmAlfalfaData {
 export interface WasmEarsSettings {
     mode: EarsMode;
     anchor: EarsAnchor;
+    source: TextureSource;
 }
 
 export interface WasmTailSettings {
     mode: TailMode;
     segments: 1 | 2 | 3 | 4;
     bends: number[];
+    source: TextureSource;
 }
 
 export enum WasmSnoutStatus {
@@ -35,12 +42,14 @@ export interface WasmSnoutSettings {
     height: number;
     length: number;
     offset: number;
+    source: TextureSource;
 }
 
 export interface WasmWingSettings {
     mode: WingsMode;
     animations: WingsAnimations;
     wings: Uint8Array;
+    source: TextureSource;
 }
 
 export enum WasmEarsMode {
@@ -260,6 +269,13 @@ impl From<WingMode> for WasmWingsMode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
+pub(crate) enum WasmTextureSource {
+    SampleSkin,
+    YourSkin,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
+#[repr(u8)]
 pub(crate) enum WasmWingsAnimations {
     Normal,
     None,
@@ -278,6 +294,7 @@ pub(crate) struct WasmSnoutSettings {
     pub(crate) height: u8,
     pub(crate) length: u8,
     pub(crate) offset: u8,
+    pub(crate) source: WasmTextureSource,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -285,6 +302,7 @@ pub(crate) struct WasmWingSettings {
     pub(crate) mode: WasmWingsMode,
     pub(crate) animations: WasmWingsAnimations,
     pub(crate) wings: Option<ByteBuf>,
+    pub(crate) source: WasmTextureSource,
 }
 
 impl From<WasmWingSettings> for WingData {
@@ -309,6 +327,7 @@ impl From<WingData> for WasmWingSettings {
                 WasmWingsAnimations::None
             },
             wings: None,
+            source: WasmTextureSource::SampleSkin,
         }
     }
 }
@@ -358,6 +377,7 @@ impl From<SnoutData> for WasmSnoutSettings {
             width: data.width,
             height: data.height,
             length: data.depth,
+            source: WasmTextureSource::SampleSkin,
         }
     }
 }
@@ -366,6 +386,7 @@ impl From<SnoutData> for WasmSnoutSettings {
 pub(crate) struct WasmEarsSettings {
     pub(crate) mode: WasmEarsMode,
     pub(crate) anchor: WasmEarsAnchor,
+    pub(crate) source: WasmTextureSource,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -405,6 +426,8 @@ impl From<AlfalfaData> for WasmAlfalfaData {
 pub(crate) struct WasmEarsFeatures {
     pub(crate) ears: WasmEarsSettings,
     pub(crate) protrusions: Vec<WasmProtrusion>,
+    #[serde(rename = "protrusionsSource")]
+    pub(crate) protrusions_source: WasmTextureSource,
     pub(crate) tail: WasmTailSettings,
     pub(crate) snout: Option<WasmSnoutSettings>,
     pub(crate) wings: WasmWingSettings,
@@ -416,11 +439,14 @@ pub(crate) struct WasmEarsFeatures {
 
 impl WasmEarsFeatures {
     pub(crate) fn with_alfalfa(self, alfalfa: Option<AlfalfaData>) -> Self {
+        let wings = alfalfa
+            .as_ref()
+            .and_then(|a| a.get_data(AlfalfaDataKey::Wings).map(|w| ByteBuf::from(w)));
+        
         Self {
             wings: WasmWingSettings {
-                wings: alfalfa
-                    .as_ref()
-                    .and_then(|a| a.get_data(AlfalfaDataKey::Wings).map(|w| ByteBuf::from(w))),
+                source: wings.as_ref().map(|_| WasmTextureSource::YourSkin).unwrap_or(WasmTextureSource::SampleSkin),
+                wings,
                 ..self.wings
             },
             cape: alfalfa
@@ -474,7 +500,9 @@ impl From<EarsFeatures> for WasmEarsFeatures {
             ears: WasmEarsSettings {
                 mode: features.ear_mode.into(),
                 anchor: features.ear_anchor.into(),
+                source: WasmTextureSource::SampleSkin,
             },
+            protrusions_source: WasmTextureSource::SampleSkin,
             protrusions: {
                 let mut protrusions = Vec::new();
                 if features.claws {
@@ -495,6 +523,7 @@ impl From<EarsFeatures> for WasmEarsFeatures {
                 mode: WasmWingsMode::None,
                 animations: WasmWingsAnimations::None,
                 wings: None,
+                source: WasmTextureSource::SampleSkin,
             }),
             cape: None,
             chest_size: features.chest_size,

@@ -12,6 +12,7 @@ repository = "https://github.com/NickAcPT/ears-tools-rs"
 
 [workspace.dependencies]
 ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
+nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 
 image = { version = "0.24", features = ["png"], default-features = false }
 

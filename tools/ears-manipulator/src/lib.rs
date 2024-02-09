@@ -13,6 +13,7 @@ use wasm_bindgen::prelude::*;
 use crate::model::WasmEarsFeatures;
 
 mod model;
+mod template;
 
 #[wasm_bindgen]
 pub fn get_ears_features(skin_data: &[u8]) -> JsResult<JsValue> {

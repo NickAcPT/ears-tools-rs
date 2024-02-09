@@ -12,6 +12,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 ears-rs = { workspace = true }
+nmsr-player-parts = { workspace = true }
 console_error_panic_hook = { workspace = true }
 wasm-bindgen = { workspace = true }
 web-sys = { workspace = true }
@@ -23,6 +24,14 @@ js-utils = { workspace = true }
 wasm-bindgen-futures =  { workspace = true }
 image = { workspace = true, default-features = false, features = ["png"] }
 serde_bytes = "0"
+glam = "0"
+
+# Dependencies for template generation
+hsl = "0"
+rand = "0.8"
+strum = { version = "0" }
+getrandom = { version = "0.2", features = ["js"] }
+itertools = "0"
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ["-g", "--roundtrip"]
