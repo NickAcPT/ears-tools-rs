@@ -1,4 +1,8 @@
-use ears_rs::alfalfa::{utils::{EraseRegionsProvider, EraseRegion}, AlfalfaDataKey, AlfalfaData, read_alfalfa};
+use ears_rs::alfalfa::{
+    read_alfalfa,
+    utils::{EraseRegion, EraseRegionsProvider},
+    AlfalfaData, AlfalfaDataKey,
+};
 use image::ImageFormat;
 use js_sys::Uint8Array;
 use js_utils::JsResult;
@@ -9,9 +13,20 @@ mod model;
 
 use model::*;
 
+#[cfg(target_arch = "wasm32")]
+use lol_alloc::{AssumeSingleThreaded, FreeListAllocator};
+
+// SAFETY: This application is single threaded, so using AssumeSingleThreaded is allowed.
+#[global_allocator]
+static ALLOCATOR: AssumeSingleThreaded<FreeListAllocator> =
+    unsafe { AssumeSingleThreaded::new(FreeListAllocator::new()) };
+
 #[wasm_bindgen]
 pub fn read_alfalfa_data(data: &[u8]) -> JsResult<JsValue> {
-    console_error_panic_hook::set_once();
+    #[cfg(debug_assertions)]
+    {
+        console_error_panic_hook::set_once();
+    }
 
     let skin = image::load_from_memory(data)?.into_rgba8();
     let mut map = HashMap::new();
@@ -22,7 +37,7 @@ pub fn read_alfalfa_data(data: &[u8]) -> JsResult<JsValue> {
         for (key, value) in alfalfa_data.get_data_raw() {
             let key = key.to_owned();
             let value = value.to_owned();
-            
+
             let entry_data = if key == Into::<&'static str>::into(AlfalfaDataKey::Cape)
                 || key == Into::<&'static str>::into(AlfalfaDataKey::Wings)
             {
@@ -58,7 +73,7 @@ pub fn write_alfalfa_data(image_data: &[u8], workspace: JsValue) -> JsResult<Uin
 
     let map = deserialize_alfalfa_data_map(workspace)?;
     let mut alfalfa = AlfalfaData::new();
-    
+
     for (key, data) in map {
         if &key == Into::<&'static str>::into(AlfalfaDataKey::Erase) {
             if let AlfalfaEntryData::Erase(data) = data {
@@ -77,11 +92,11 @@ pub fn write_alfalfa_data(image_data: &[u8], workspace: JsValue) -> JsResult<Uin
             }
         } else if let AlfalfaEntryData::Binary(data) | AlfalfaEntryData::Image(data) = data {
             let key = Box::leak(key.into_boxed_str());
-            
+
             alfalfa.set_data(AlfalfaDataKey::Custom(key), data);
         }
     }
-    
+
     let mut skin = image::load_from_memory(image_data)?.into_rgba8();
 
     ears_rs::alfalfa::write_alfalfa(&alfalfa, &mut skin)?;
