@@ -283,6 +283,12 @@ fn add_scene_texture(
                             false,
                             model,
                         )?;
+                        
+                        // Clean-up invalid state with missing data for wings
+                        // This is a workaround.
+                        if let Some(features) = part_context.ears_features.as_mut() {
+                            features.wing.take();
+                        }
                     }
 
                     if let Some(cape) = alfalfa.get_data(AlfalfaDataKey::Cape) {
@@ -296,6 +302,20 @@ fn add_scene_texture(
                             true,
                             model,
                         )?;
+                    } else {
+                        // Clean-up invalid state with missing data for cape
+                        // This is a workaround.
+                        if let Some(features) = part_context.ears_features.as_mut() {
+                            features.cape_enabled = false;
+                        }
+                    }
+                } else {
+                    // Clean-up invalid state with missing alfalfa data for wings and cape
+                    // No alfalfa means that there is no wings and/or cape
+                    // This is a workaround.
+                    if let Some(features) = part_context.ears_features.as_mut() {
+                        features.wing.take();
+                        features.cape_enabled = false;
                     }
                 }
 
@@ -421,11 +441,11 @@ pub async fn render_frame() -> JsResult<()> {
 
             if let Some(context) = canvas() {
                 let image_data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
-                wasm_bindgen::Clamped(scene.copy_output_texture()),
-                size.width,
-                size.height,
-            )
-            .expect("Failed to create image data");
+                    wasm_bindgen::Clamped(scene.copy_output_texture()),
+                    size.width,
+                    size.height,
+                )
+                .expect("Failed to create image data");
 
                 context
                     .put_image_data(&image_data, 0 as f64, 0 as f64)
@@ -483,9 +503,7 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
 
     let mut context = GraphicsContext::new(GraphicsContextDescriptor {
         backends: Some(backend),
-        surface_provider: Box::new(|i| {
-            i.create_surface_from_canvas(canvas.take()).ok()
-        }),
+        surface_provider: Box::new(|i| i.create_surface_from_canvas(canvas.take()).ok()),
         default_size: (width, height),
         texture_format: Some(wgpu::TextureFormat::Rgba8Unorm),
         features: Features::empty(),
