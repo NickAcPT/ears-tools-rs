@@ -24,12 +24,12 @@ js-utils = { workspace = true }
 wasm-bindgen-futures =  { workspace = true }
 image = { workspace = true, default-features = false, features = ["png"] }
 serde_bytes = "0"
-glam = "0"
+glam = "0.24"
 
 # Dependencies for template generation
 hsl = "0"
 rand = "0.8"
-strum = { version = "0" }
+strum = { version = "0.25", features = ["derive"] }
 getrandom = { version = "0.2", features = ["js"] }
 itertools = "0"
 

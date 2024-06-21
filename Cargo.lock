@@ -630,7 +630,7 @@ dependencies = [
  "console_error_panic_hook",
  "ears-rs",
  "getrandom",
- "glam 0.25.0",
+ "glam",
  "hsl",
  "image 0.25.0",
  "itertools 0.12.1",
@@ -642,7 +642,7 @@ dependencies = [
  "serde-wasm-bindgen",
  "serde_bytes",
  "serde_repr",
- "strum 0.26.2",
+ "strum",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -822,12 +822,6 @@ dependencies = [
  "bytemuck",
  "serde",
 ]
-
-[[package]]
-name = "glam"
-version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "151665d9be52f9bb40fc7966565d39666f2d1e69233571b71b87791c7e0528b3"
 
 [[package]]
 name = "glow"
@@ -1287,10 +1281,10 @@ version = "0.1.0"
 source = "git+https://github.com/NickAcPT/nmsr-rs#e62100060d773031b53ff8389e2675b27e2bcdb7"
 dependencies = [
  "ears-rs",
- "glam 0.24.2",
+ "glam",
  "itertools 0.11.0",
  "paste",
- "strum 0.25.0",
+ "strum",
  "thiserror",
 ]
 
@@ -1303,13 +1297,13 @@ dependencies = [
  "bytemuck",
  "deadpool",
  "derive_more",
- "glam 0.24.2",
+ "glam",
  "image 0.25.0",
  "itertools 0.11.0",
  "nmsr-player-parts",
  "paste",
  "smaa",
- "strum 0.25.0",
+ "strum",
  "thiserror",
  "tokio",
  "tracing",
@@ -1326,7 +1320,7 @@ dependencies = [
  "clap",
  "derive_more",
  "ears-rs",
- "glam 0.24.2",
+ "glam",
  "image 0.24.9",
  "itertools 0.11.0",
  "nmsr-rendering",
@@ -1346,7 +1340,7 @@ source = "git+https://github.com/NickAcPT/nmsr-rs#e62100060d773031b53ff8389e2675
 dependencies = [
  "arrayvec",
  "ears-rs",
- "glam 0.24.2",
+ "glam",
  "image 0.25.0",
  "nmsr-rendering",
 ]
@@ -1825,7 +1819,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "ears-rs",
- "glam 0.24.2",
+ "glam",
  "image 0.25.0",
  "js-utils",
  "nmsr-player-parts",
@@ -1951,12 +1945,6 @@ checksum = "290d54ea6f91c969195bdbcd7442c8c2a2ba87da8bf60a7ee86a235d4bc1e125"
 dependencies = [
  "strum_macros",
 ]
-
-[[package]]
-name = "strum"
-version = "0.26.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d8cec3501a5194c432b2b7976db6b7d10ec95c253208b45f83f7136aa985e29"
 
 [[package]]
 name = "strum_macros"
