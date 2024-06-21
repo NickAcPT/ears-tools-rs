@@ -22,10 +22,10 @@ use nmsr_player_parts::{
         provider::{PartsProvider, PlayerPartProviderContext, PlayerPartsProvider},
         uv::FaceUv,
     },
-    types::{PlayerBodyPartType, PlayerPartTextureType},
+    types::{PlayerBodyPartType, PlayerPartTextureType}, IntoEnumIterator,
 };
 use rand::Rng;
-use strum::{EnumIter, IntoEnumIterator};
+use strum::EnumIter;
 
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq, EnumIter, Default)]
 enum FaceOrientation {
