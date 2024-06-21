@@ -14,7 +14,7 @@ repository = "https://github.com/NickAcPT/ears-tools-rs"
 ears-rs = { git = "https://github.com/NickAcPT/ears-rs" }
 nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 
-image = { version = "0.24", features = ["png"], default-features = false }
+image = { version = "0.25.0", features = ["png"], default-features = false }
 
 thiserror = "1"
 
