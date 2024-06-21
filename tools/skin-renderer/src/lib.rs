@@ -283,7 +283,7 @@ fn add_scene_texture(
                             false,
                             model,
                         )?;
-                        
+                    } else {
                         // Clean-up invalid state with missing data for wings
                         // This is a workaround.
                         if let Some(features) = part_context.ears_features.as_mut() {
