@@ -435,6 +435,8 @@ pub(crate) struct WasmEarsFeatures {
     #[serde(rename = "chestSize")]
     pub(crate) chest_size: f32,
     pub(crate) alfalfa: Option<WasmAlfalfaData>,
+    #[serde(rename = "emissiveSkin")]
+    pub(crate) emissive_skin: bool,
 }
 
 impl WasmEarsFeatures {
@@ -470,7 +472,7 @@ impl From<WasmEarsFeatures> for ears_rs::features::EarsFeatures {
             horn: features.protrusions.contains(&WasmProtrusion::Horns),
             chest_size: features.chest_size,
             cape_enabled: features.cape.is_some(),
-            emissive: false, // TODO
+            emissive: features.emissive_skin, // TODO
         }
     }
 }
@@ -528,6 +530,7 @@ impl From<EarsFeatures> for WasmEarsFeatures {
             cape: None,
             chest_size: features.chest_size,
             alfalfa: None,
+            emissive_skin: features.emissive,
         }
     }
 }

@@ -12,7 +12,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 ears-rs = { workspace = true }
-nmsr-player-parts = { workspace = true }
+nmsr-player-parts = { workspace = true, features = ["ears"]}
 console_error_panic_hook = { workspace = true }
 wasm-bindgen = { workspace = true }
 web-sys = { workspace = true }
