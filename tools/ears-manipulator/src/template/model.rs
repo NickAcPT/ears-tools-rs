@@ -22,7 +22,8 @@ use nmsr_player_parts::{
         provider::{PartsProvider, PlayerPartProviderContext, PlayerPartsProvider},
         uv::FaceUv,
     },
-    types::{PlayerBodyPartType, PlayerPartTextureType}, IntoEnumIterator,
+    types::{PlayerBodyPartType, PlayerPartTextureType},
+    IntoEnumIterator,
 };
 use rand::Rng;
 use strum::EnumIter;
@@ -32,7 +33,7 @@ enum FaceOrientation {
     Up,
     Down,
     North,
-    
+
     #[default]
     South,
     East,
@@ -114,11 +115,13 @@ fn main() -> JsResult<()> {
         cape_enabled: false,
         emissive: false,
     };
-    
+
     let context: PlayerPartProviderContext<()> = PlayerPartProviderContext {
         model: nmsr_player_parts::model::PlayerModel::Alex,
         has_hat_layer: true,
         has_layers: true,
+        has_deadmau5_ears: false,
+        is_flipped_upside_down: false,
         has_cape: false,
         arm_rotation: 0f32,
         shadow_y_pos: None,
@@ -150,7 +153,7 @@ fn main() -> JsResult<()> {
 
         for (part, body_part) in parts {
             let part_template_context = PartTemplateGeneratorContext::new();
-            
+
             handle_part_texture(&part_template_context, body_part, part, part_texture);
         }
 
@@ -182,18 +185,17 @@ fn handle_part_face(
     let min = top_left.min(bottom_right);
     let max = top_left.max(bottom_right);
 
-
     let Some(mut color) = part_template_context.colors.get(&orientation).copied() else {
         return;
     };
-    
+
     let is_layer = part.is_layer() || part.is_hat_layer() || true;
-    
+
     if is_layer {
         color.s = 1.0;
         color.l = 0.5;
     }
-    
+
     let min_x = min.x as u32;
     let max_x = max.x as u32;
     let min_y = min.y as u32;
@@ -203,7 +205,7 @@ fn handle_part_face(
             if is_layer && (x != min_x && x != max_x - 1 && y != min_y && y != max_y - 1) {
                 continue;
             }
-            
+
             let (r, g, b) = color.to_rgb();
             let a = if is_layer { 127 } else { 255 };
 
@@ -230,7 +232,7 @@ fn handle_part_texture(
                 face_uvs.up,
                 face_uvs.down,
             ];
-            
+
             let orientations = [
                 FaceOrientation::North,
                 FaceOrientation::South,

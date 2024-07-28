@@ -1,11 +1,15 @@
 mod mouse;
 #[cfg(feature = "software-rendering")]
 mod nmsr_rendering_compat;
-use std::sync::Arc;
 
-use glam::Vec3A;
+#[cfg(feature = "software-rendering")]
+use std::sync::Arc;
 #[cfg(feature = "software-rendering")]
 use nmsr_rendering_compat as nmsr_rendering;
+#[cfg(feature = "software-rendering")]
+use send_wrapper::SendWrapper;
+
+use glam::Vec3A;
 
 use ears_rs::parser::EarsParser;
 use image::{ImageFormat, RgbaImage};
@@ -16,6 +20,7 @@ use nmsr_player_parts::{
     types::{PlayerBodyPartType, PlayerPartTextureType},
     IntoEnumIterator,
 };
+
 #[cfg(not(feature = "software-rendering"))]
 use nmsr_rendering::high_level::pipeline::{
     Features, GraphicsContext, GraphicsContextDescriptor, SceneContext, SceneContextWrapper,
@@ -27,11 +32,16 @@ use nmsr_rendering::{
     },
     low_level::Vec3,
 };
-use send_wrapper::SendWrapper;
+
 use wasm_bindgen::{prelude::wasm_bindgen, UnwrapThrowExt};
 use web_sys::HtmlCanvasElement;
 #[cfg(not(feature = "software-rendering"))]
 use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits};
+
+
+#[cfg(all(not(feature = "webgl"), not(feature = "webgpu"), not(feature = "software-rendering")))]
+compile_error!("At least one of the following features must be enabled: 'webgl', 'webgpu', 'software-rendering'");
+
 
 #[cfg(not(feature = "software-rendering"))]
 type SceneType = Scene<SceneContextWrapper>;
@@ -218,6 +228,8 @@ pub async fn setup_scene(
         },
         has_hat_layer: model.has_hat_layer,
         has_layers: model.has_layers,
+        has_deadmau5_ears: false,
+        is_flipped_upside_down: false,
         has_cape: ears_features.is_some_and(|f| f.cape_enabled && model.has_cape),
         arm_rotation: 10.0,
         shadow_y_pos: None,

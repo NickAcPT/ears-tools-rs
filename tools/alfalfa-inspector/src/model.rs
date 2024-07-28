@@ -29,7 +29,7 @@ pub type AlfalfaDataMap = HashMap<String, AlfalfaEntryData>;
 
 pub(crate) fn serialize_alfalfa_data_map(data: AlfalfaDataMap) -> JsResult<JsValue> {
     fn serialize_alfalfa_entry_data(data: AlfalfaEntryData) -> JsResult<JsValue> {
-        Ok(data.serialize(&serde_wasm_bindgen::Serializer::json_compatible())?)
+        Ok(data.serialize(&serde_wasm_bindgen::Serializer::default())?)
     }
 
     let obj = Object::new();
