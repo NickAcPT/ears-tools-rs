@@ -20,7 +20,7 @@ nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 # web-sys has to be locked to 0.3.69 because otherwise, wgpu breaks
 web-sys = { version = "=0.3.69", features = ["HtmlCanvasElement"] }
 # We're being spicy here by asking it to be send and sync..
-wgpu = { version = "0", features = [
+wgpu = { version = "22.0", features = [
     "fragile-send-sync-non-atomic-wasm",
 ], optional = true }
 winit = "0.29"
@@ -28,7 +28,7 @@ js-utils = { workspace = true }
 wasm-bindgen-futures = "0.4.38"
 send_wrapper = "0.6.0"
 image = { version = "0", default-features = false, features = ["png"] }
-glam = "0.27"
+glam = "0.28"
 
 [features]
 default = ["ears", "nmsr-rendering/ears", "nmsr-software-rasterizer?/ears"]

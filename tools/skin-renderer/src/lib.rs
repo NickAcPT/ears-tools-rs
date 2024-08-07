@@ -3,11 +3,11 @@ mod mouse;
 mod nmsr_rendering_compat;
 
 #[cfg(feature = "software-rendering")]
-use std::sync::Arc;
-#[cfg(feature = "software-rendering")]
 use nmsr_rendering_compat as nmsr_rendering;
 #[cfg(feature = "software-rendering")]
 use send_wrapper::SendWrapper;
+#[cfg(feature = "software-rendering")]
+use std::sync::Arc;
 
 use glam::Vec3A;
 
@@ -38,10 +38,12 @@ use web_sys::HtmlCanvasElement;
 #[cfg(not(feature = "software-rendering"))]
 use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits};
 
-
-#[cfg(all(not(feature = "webgl"), not(feature = "webgpu"), not(feature = "software-rendering")))]
+#[cfg(all(
+    not(feature = "webgl"),
+    not(feature = "webgpu"),
+    not(feature = "software-rendering")
+))]
 compile_error!("At least one of the following features must be enabled: 'webgl', 'webgpu', 'software-rendering'");
-
 
 #[cfg(not(feature = "software-rendering"))]
 type SceneType = Scene<SceneContextWrapper>;
@@ -51,7 +53,7 @@ type SceneType = Scene<()>;
 #[cfg(not(feature = "software-rendering"))]
 static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
 #[cfg(not(feature = "software-rendering"))]
-fn graphics_context() -> Option<&'static GraphicsContext> {
+fn graphics_context() -> Option<&'static GraphicsContext<'static>> {
     unsafe { GRAPHICS_CONTEXT.as_ref() }
 }
 
@@ -283,15 +285,37 @@ fn add_scene_texture(
             use nmsr_rendering::high_level::parts::provider::ears::PlayerPartEarsTextureType;
 
             if texture_type == PlayerPartTextureType::Skin {
+                let emissive_palette = ears_rs::utils::extract_emissive_palette(&texture);
+
                 if let Ok(Some(alfalfa)) = ears_rs::alfalfa::read_alfalfa(&texture) {
                     if let Some(wings) = alfalfa.get_data(AlfalfaDataKey::Wings) {
+                        let mut wings_texture = image::load_from_memory(wings)
+                            .expect_throw("Failed to load wings")
+                            .to_rgba8();
+
+                        if let Ok(Some(ref emissive_palette)) = emissive_palette {
+                            let emissive_wings = ears_rs::utils::apply_emissive_palette(
+                                &mut wings_texture,
+                                &emissive_palette,
+                            );
+
+                            if let Ok(emissive_wings) = emissive_wings {
+                                add_scene_texture(
+                                    scene,
+                                    part_context,
+                                    PlayerPartEarsTextureType::EmissiveWings.into(),
+                                    emissive_wings,
+                                    false,
+                                    model,
+                                )?;
+                            }
+                        }
+
                         add_scene_texture(
                             scene,
                             part_context,
                             PlayerPartEarsTextureType::Wings.into(),
-                            image::load_from_memory(wings)
-                                .expect_throw("Failed to load wings")
-                                .to_rgba8(),
+                            wings_texture,
                             false,
                             model,
                         )?;
@@ -332,6 +356,21 @@ fn add_scene_texture(
                 }
 
                 ears_rs::utils::process_erase_regions(&mut texture)?;
+
+                if let Ok(Some(ref emissive_palette)) = &emissive_palette {
+                    if let Ok(emissive_skin) =
+                        ears_rs::utils::apply_emissive_palette(&mut texture, &emissive_palette)
+                    {
+                        add_scene_texture(
+                            scene,
+                            part_context,
+                            PlayerPartEarsTextureType::EmissiveSkin.into(),
+                            emissive_skin,
+                            false,
+                            model,
+                        )?;
+                    }
+                }
             } else if texture_type == PlayerPartEarsTextureType::Cape.into() {
                 texture = ears_rs::utils::convert_ears_cape_to_mojang_cape(texture);
             }
@@ -349,6 +388,7 @@ fn add_scene_texture(
     #[cfg(not(feature = "software-rendering"))]
     let texture = &texture;
 
+    
     scene.set_texture(
         #[cfg(not(feature = "software-rendering"))]
         graphics_context().expect_throw("Context"),
@@ -357,6 +397,7 @@ fn add_scene_texture(
         #[cfg(feature = "software-rendering")]
         &part_context,
     );
+
     #[cfg(not(feature = "software-rendering"))]
     scene.rebuild_parts(&part_context, PlayerBodyPartType::iter().collect());
 
@@ -497,7 +538,9 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
 #[cfg(any(feature = "webgl", feature = "webgpu"))]
 #[wasm_bindgen]
 pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> JsResult<()> {
+    use send_wrapper::SendWrapper;
     use wasm_bindgen::JsError;
+    use wgpu::SurfaceTarget;
 
     console_error_panic_hook::set_once();
 
@@ -515,7 +558,7 @@ pub async fn initialize(canvas: HtmlCanvasElement, width: u32, height: u32) -> J
 
     let mut context = GraphicsContext::new(GraphicsContextDescriptor {
         backends: Some(backend),
-        surface_provider: Box::new(|i| i.create_surface_from_canvas(canvas.take()).ok()),
+        surface_provider: Box::new(|i| i.create_surface(SurfaceTarget::Canvas(canvas.take())).ok()),
         default_size: (width, height),
         texture_format: Some(wgpu::TextureFormat::Rgba8Unorm),
         features: Features::empty(),

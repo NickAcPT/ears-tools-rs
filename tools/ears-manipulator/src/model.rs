@@ -473,6 +473,7 @@ impl From<WasmEarsFeatures> for ears_rs::features::EarsFeatures {
             chest_size: features.chest_size,
             cape_enabled: features.cape.is_some(),
             emissive: features.emissive_skin, // TODO
+            ..Default::default()
         }
     }
 }

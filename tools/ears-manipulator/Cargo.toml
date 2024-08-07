@@ -24,7 +24,7 @@ js-utils = { workspace = true }
 wasm-bindgen-futures =  { workspace = true }
 image = { workspace = true, default-features = false, features = ["png"] }
 serde_bytes = "0"
-glam = "0.27"
+glam = "0.28"
 
 # Dependencies for template generation
 hsl = "0"
