@@ -11,12 +11,16 @@ use std::sync::Arc;
 
 use glam::Vec3A;
 
-use ears_rs::parser::EarsParser;
+use ears_rs::{
+    alfalfa::read_alfalfa,
+    features::{self, EarsFeatures},
+    parser::EarsParser,
+};
 use image::{ImageFormat, RgbaImage};
 use js_utils::JsResult;
 use nmsr_player_parts::{
     model::PlayerModel,
-    parts::provider::PlayerPartProviderContext,
+    parts::{part, provider::PlayerPartProviderContext},
     types::{PlayerBodyPartType, PlayerPartTextureType},
     IntoEnumIterator,
 };
@@ -242,6 +246,8 @@ pub async fn setup_scene(
 
     let parts: Vec<_> = PlayerBodyPartType::iter().into_iter().collect();
 
+    cleanup_invalid_ears_data(&skin_image, &mut part_context)?;
+
     let mut scene: SceneType = SceneType::new(
         #[cfg(not(feature = "software-rendering"))]
         graphics_context,
@@ -266,6 +272,45 @@ pub async fn setup_scene(
 
     unsafe {
         SCENE.replace(scene);
+    }
+
+    Ok(())
+}
+
+fn cleanup_invalid_ears_data(
+    skin_image: &RgbaImage,
+    part_context: &mut PlayerPartProviderContext<()>,
+) -> JsResult<()> {
+    if let Some(features) = part_context.ears_features.as_mut() {
+        let alfalfa = read_alfalfa(&skin_image)?;
+
+        // If features has wings but the alfalfa data does not contain wings, remove the wings
+        if features.wing.is_some()
+            && alfalfa.as_ref()
+                .and_then(|a| a.get_data(ears_rs::alfalfa::AlfalfaDataKey::Wings))
+                .is_none()
+        {
+            features.wing.take();
+        }
+        
+        
+        // If features has cape but the alfalfa data does not contain cape, remove the cape
+        if features.cape_enabled
+            && alfalfa.as_ref()
+                .and_then(|a| a.get_data(ears_rs::alfalfa::AlfalfaDataKey::Cape))
+                .is_none()
+        {
+            features.cape_enabled = false;
+            part_context.has_cape = false;
+        }
+        
+        // If features has emissives, but palette is empty, remove the emissives
+        
+        if features.emissive
+            && ears_rs::utils::extract_emissive_palette(&skin_image)?.is_none()
+        {
+            features.emissive = false;
+        }
     }
 
     Ok(())
@@ -388,7 +433,6 @@ fn add_scene_texture(
     #[cfg(not(feature = "software-rendering"))]
     let texture = &texture;
 
-    
     scene.set_texture(
         #[cfg(not(feature = "software-rendering"))]
         graphics_context().expect_throw("Context"),

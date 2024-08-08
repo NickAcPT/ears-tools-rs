@@ -685,7 +685,7 @@ dependencies = [
 [[package]]
 name = "ears-rs"
 version = "0.2.0"
-source = "git+https://github.com/NickAcPT/ears-rs#e62100017a0e1be557627666c0f5399fb399bd79"
+source = "git+https://github.com/NickAcPT/ears-rs#e621000b019fca134daf84d9a3e6827316f7f48a"
 dependencies = [
  "byteorder",
  "enum-ordinalize",
