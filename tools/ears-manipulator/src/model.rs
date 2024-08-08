@@ -109,7 +109,7 @@ use ears_rs::{
             wing::{WingData, WingMode},
         },
         EarsFeatures,
-    },
+    }, utils::EarsEmissivePalette,
 };
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
@@ -423,31 +423,57 @@ impl From<AlfalfaData> for WasmAlfalfaData {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub(crate) struct WasmEarsEmissiveData {
+    pub(crate) enabled: bool,
+    pub(crate) palette: Vec<u32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct WasmEarsFeatures {
     pub(crate) ears: WasmEarsSettings,
     pub(crate) protrusions: Vec<WasmProtrusion>,
-    #[serde(rename = "protrusionsSource")]
     pub(crate) protrusions_source: WasmTextureSource,
     pub(crate) tail: WasmTailSettings,
     pub(crate) snout: Option<WasmSnoutSettings>,
     pub(crate) wings: WasmWingSettings,
     pub(crate) cape: Option<ByteBuf>,
-    #[serde(rename = "chestSize")]
     pub(crate) chest_size: f32,
     pub(crate) alfalfa: Option<WasmAlfalfaData>,
-    #[serde(rename = "emissiveSkin")]
-    pub(crate) emissive_skin: bool,
+    pub(crate) emissives: WasmEarsEmissiveData,
+    pub(crate) data_version: u8,
+}
+
+fn rbg_to_hex(image::Rgb([r, g, b]): image::Rgb<u8>) -> u32 {
+    u32::from_be_bytes([0xFF, r, g, b])
+}
+
+fn hex_to_rgb(hex: u32) -> image::Rgb<u8> {
+    image::Rgb::from([((hex >> 16) & 0xFF) as u8, ((hex >> 8) & 0xFF) as u8, (hex & 0xFF) as u8])
 }
 
 impl WasmEarsFeatures {
+    pub(crate) fn with_emissive(mut self, palette: Option<EarsEmissivePalette>) -> Self {
+        self.emissives.palette.clear();
+    
+        if let Some(emissive_pixels) = palette.as_ref().map(|p| p.0.clone()) {
+            self.emissives.palette.extend(emissive_pixels.into_iter().map(rbg_to_hex));
+        }
+        
+        self
+    }
+    
     pub(crate) fn with_alfalfa(self, alfalfa: Option<AlfalfaData>) -> Self {
         let wings = alfalfa
             .as_ref()
             .and_then(|a| a.get_data(AlfalfaDataKey::Wings).map(|w| ByteBuf::from(w)));
-        
+
         Self {
             wings: WasmWingSettings {
-                source: wings.as_ref().map(|_| WasmTextureSource::YourSkin).unwrap_or(WasmTextureSource::SampleSkin),
+                source: wings
+                    .as_ref()
+                    .map(|_| WasmTextureSource::YourSkin)
+                    .unwrap_or(WasmTextureSource::SampleSkin),
                 wings,
                 ..self.wings
             },
@@ -472,8 +498,8 @@ impl From<WasmEarsFeatures> for ears_rs::features::EarsFeatures {
             horn: features.protrusions.contains(&WasmProtrusion::Horns),
             chest_size: features.chest_size,
             cape_enabled: features.cape.is_some(),
-            emissive: features.emissive_skin, // TODO
-            ..Default::default()
+            emissive: features.emissives.enabled,
+            data_version: features.data_version,
         }
     }
 }
@@ -496,6 +522,20 @@ impl From<WasmEarsFeatures> for AlfalfaData {
         alfalfa
     }
 }
+
+impl From<&WasmEarsFeatures> for EarsEmissivePalette {
+    fn from(value: &WasmEarsFeatures) -> Self {
+        let palette = value
+            .emissives
+            .palette
+            .iter()
+            .map(|&hex| hex_to_rgb(hex))
+            .collect();
+
+        Self(palette)
+    }
+}
+
 
 impl From<EarsFeatures> for WasmEarsFeatures {
     fn from(features: EarsFeatures) -> Self {
@@ -531,7 +571,11 @@ impl From<EarsFeatures> for WasmEarsFeatures {
             cape: None,
             chest_size: features.chest_size,
             alfalfa: None,
-            emissive_skin: features.emissive,
+            emissives: WasmEarsEmissiveData {
+                enabled: features.emissive,
+                palette: vec![],
+            },
+            data_version: features.data_version,
         }
     }
 }
