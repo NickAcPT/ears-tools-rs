@@ -12,6 +12,7 @@ extern crate alloc;
 
 #[cfg(target_arch = "wasm32")]
 use lol_alloc::{AssumeSingleThreaded, FreeListAllocator};
+use web_sys::console::log_1;
 
 // SAFETY: This application is single threaded, so using AssumeSingleThreaded is allowed.
 #[cfg(target_arch = "wasm32")]
@@ -47,6 +48,14 @@ pub fn generate_blockbench_model(
     project
         .load_texture(PlayerPartTextureType::Skin, &skin_bytes, true)
         .unwrap_throw();
+
+    for warning in project.warnings().iter() {
+        log_1(&JsValue::from_str(&warning));
+
+        if let Some(window) = web_sys::window() {
+            window.alert_with_message(&warning).unwrap_throw();
+        }
+    }
 
     let result = blockbench::generate_project(project);
 

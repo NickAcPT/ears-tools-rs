@@ -18,6 +18,7 @@ nmsr-rendering-blockbench-model-generator-experiment = { git = "https://github.c
     "ears",
     "wasm",
 ] }
+web-sys = { workspace = true, features = ["Window", "console"]}
 
 # This is here because some crate depends on it
 getrandom = { version = "0.2", features = ["js"] }
