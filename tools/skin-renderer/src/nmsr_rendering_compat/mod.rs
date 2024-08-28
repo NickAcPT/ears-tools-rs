@@ -10,6 +10,7 @@ pub mod high_level {
             pub use crate::nmsr_rendering::model::Scene;
             pub use nmsr_rasterizer_test::{model::Size, shader::SunInformation};
         }
+        pub type GraphicsContext = ();
     }
     pub mod parts {
         pub use nmsr_player_parts::parts::*;

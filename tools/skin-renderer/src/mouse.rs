@@ -2,7 +2,6 @@
 use crate::nmsr_rendering_compat as nmsr_rendering;
 use crate::SceneType;
 
-#[cfg(not(feature = "software-rendering"))]
 use nmsr_rendering::high_level::pipeline::GraphicsContext;
 use nmsr_rendering::{
     high_level::camera::CameraRotation,
@@ -16,7 +15,7 @@ static mut LAST_Y: Option<f32> = None;
 
 pub fn rotate_camera(
     scene: &mut SceneType,
-    #[cfg(not(feature = "software-rendering"))] ctx: &GraphicsContext,
+    ctx: &GraphicsContext,
     yaw: f32,
     pitch: f32,
     roll: f32,
@@ -56,14 +55,13 @@ pub fn rotate_camera(
     scene.sun_information_mut().direction = front_lighting;
 
     scene.update(
-        #[cfg(not(feature = "software-rendering"))]
         ctx,
     );
 }
 
 pub fn handle_mouse_move(
     scene: &mut SceneType,
-    #[cfg(not(feature = "software-rendering"))] ctx: &GraphicsContext,
+    ctx: &GraphicsContext,
     x: f32,
     y: f32,
 ) {
@@ -86,7 +84,6 @@ pub fn handle_mouse_move(
 
             rotate_camera(
                 scene,
-                #[cfg(not(feature = "software-rendering"))]
                 ctx,
                 yaw,
                 pitch,
@@ -115,7 +112,7 @@ pub fn handle_mouse_up() {
 
 pub fn handle_mouse_scroll(
     scene: &mut SceneType,
-    #[cfg(not(feature = "software-rendering"))] ctx: &GraphicsContext,
+    ctx: &GraphicsContext,
     delta: f32,
 ) {
     let camera = scene.camera_mut();
@@ -128,7 +125,6 @@ pub fn handle_mouse_scroll(
         *dist = dist.clamp(5.0, 90.0);
 
         scene.update(
-            #[cfg(not(feature = "software-rendering"))]
             ctx,
         );
     }

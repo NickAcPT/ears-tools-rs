@@ -5,9 +5,7 @@ mod nmsr_rendering_compat;
 #[cfg(feature = "software-rendering")]
 use nmsr_rendering_compat as nmsr_rendering;
 #[cfg(feature = "software-rendering")]
-use send_wrapper::SendWrapper;
-#[cfg(feature = "software-rendering")]
-use std::sync::Arc;
+use {send_wrapper::SendWrapper, std::sync::Arc};
 
 use glam::Vec3A;
 
@@ -286,29 +284,28 @@ fn cleanup_invalid_ears_data(
 
         // If features has wings but the alfalfa data does not contain wings, remove the wings
         if features.wing.is_some()
-            && alfalfa.as_ref()
+            && alfalfa
+                .as_ref()
                 .and_then(|a| a.get_data(ears_rs::alfalfa::AlfalfaDataKey::Wings))
                 .is_none()
         {
             features.wing.take();
         }
-        
-        
+
         // If features has cape but the alfalfa data does not contain cape, remove the cape
         if features.cape_enabled
-            && alfalfa.as_ref()
+            && alfalfa
+                .as_ref()
                 .and_then(|a| a.get_data(ears_rs::alfalfa::AlfalfaDataKey::Cape))
                 .is_none()
         {
             features.cape_enabled = false;
             part_context.has_cape = false;
         }
-        
+
         // If features has emissives, but palette is empty, remove the emissives
-        
-        if features.emissive
-            && ears_rs::utils::extract_emissive_palette(&skin_image)?.is_none()
-        {
+
+        if features.emissive && ears_rs::utils::extract_emissive_palette(&skin_image)?.is_none() {
             features.emissive = false;
         }
     }
@@ -482,10 +479,7 @@ pub fn set_camera_rotation(yaw: f32, pitch: f32, roll: f32) {
             .camera_mut()
             .set_rotation(CameraRotation { yaw, pitch, roll });
 
-        scene.update(
-            #[cfg(not(feature = "software-rendering"))]
-            ctx,
-        );
+        scene.update(ctx);
     }
 }
 
@@ -502,35 +496,21 @@ pub async fn notify_mouse_up() {
 #[wasm_bindgen]
 pub async fn notify_mouse_move(x: f32, y: f32) {
     if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
-        mouse::handle_mouse_move(
-            scene,
-            #[cfg(not(feature = "software-rendering"))]
-            ctx,
-            x,
-            y,
-        );
+        mouse::handle_mouse_move(scene, ctx, x, y);
     }
 }
 
 #[wasm_bindgen]
 pub async fn notify_mouse_scroll(delta: f32) {
     if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
-        mouse::handle_mouse_scroll(
-            scene,
-            #[cfg(not(feature = "software-rendering"))]
-            ctx,
-            delta,
-        );
+        mouse::handle_mouse_scroll(scene, ctx, delta);
     }
 }
 
 #[wasm_bindgen]
 pub async fn render_frame() -> JsResult<()> {
     if let (Some(scene), Some(ctx)) = (scene(), graphics_context()) {
-        scene.render(
-            #[cfg(not(feature = "software-rendering"))]
-            ctx,
-        )?;
+        scene.render(ctx)?;
 
         #[cfg(feature = "software-rendering")]
         {

@@ -23,6 +23,8 @@ use nmsr_rasterizer_test::{
     shader::{ShaderState, SunInformation},
 };
 
+use crate::nmsr_rendering_compat::high_level::pipeline::GraphicsContext;
+
 pub struct Scene<M: ArmorMaterial> {
     camera: Camera,
     lighting: SunInformation,
@@ -124,7 +126,7 @@ impl<M: ArmorMaterial + Debug> Scene<M> {
         self.shader_states.push(value);
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, _ctx: &GraphicsContext) {
         for state in &mut self.shader_states {
             state.camera = self.camera;
             state.sun = if state.emissive_texture { 
@@ -137,7 +139,7 @@ impl<M: ArmorMaterial + Debug> Scene<M> {
         }
     }
 
-    pub fn render(&mut self) -> Result<(), NMSRRenderingError> {
+    pub fn render(&mut self, _ctx: &GraphicsContext) -> Result<(), NMSRRenderingError> {
         self.entry.textures.clear_depth();
         self.entry.textures.output.fill(0);
 
