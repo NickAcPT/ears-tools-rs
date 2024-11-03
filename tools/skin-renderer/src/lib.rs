@@ -25,12 +25,12 @@ use nmsr_player_parts::{
 
 #[cfg(not(feature = "software-rendering"))]
 use nmsr_rendering::high_level::pipeline::{
-    Features, GraphicsContext, GraphicsContextDescriptor, SceneContext, SceneContextWrapper,
+    Features, GraphicsContext, GraphicsContextDescriptor,
 };
 use nmsr_rendering::{
     high_level::{
         camera::{Camera, CameraRotation, ProjectionParameters},
-        pipeline::scene::{Scene, Size, SunInformation},
+        pipeline::{scene::{Scene, Size, SunInformation}, SceneContext, SceneContextWrapper},
     },
     low_level::Vec3,
 };
@@ -47,10 +47,7 @@ use wgpu::{Backends, BlendState, CompositeAlphaMode, Limits};
 ))]
 compile_error!("At least one of the following features must be enabled: 'webgl', 'webgpu', 'software-rendering'");
 
-#[cfg(not(feature = "software-rendering"))]
 type SceneType = Scene<SceneContextWrapper>;
-#[cfg(feature = "software-rendering")]
-type SceneType = Scene<()>;
 
 #[cfg(not(feature = "software-rendering"))]
 static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
@@ -205,9 +202,7 @@ pub async fn setup_scene(
         width: width as u32,
         height: height as u32,
     };
-    #[cfg(not(feature = "software-rendering"))]
     let graphics_context = graphics_context().expect_throw("Graphics context not initialized");
-    #[cfg(not(feature = "software-rendering"))]
     let scene_context = SceneContext::new(graphics_context);
 
     let camera = Camera::new_orbital(
@@ -247,14 +242,11 @@ pub async fn setup_scene(
     cleanup_invalid_ears_data(&skin_image, &mut part_context)?;
 
     let mut scene: SceneType = SceneType::new(
-        #[cfg(not(feature = "software-rendering"))]
         graphics_context,
-        #[cfg(not(feature = "software-rendering"))]
         scene_context.into(),
         camera,
         lighting,
         size,
-        #[cfg(not(feature = "software-rendering"))]
         &part_context,
         &parts,
     );
@@ -431,7 +423,6 @@ fn add_scene_texture(
     let texture = &texture;
 
     scene.set_texture(
-        #[cfg(not(feature = "software-rendering"))]
         graphics_context().expect_throw("Context"),
         texture_type,
         texture,

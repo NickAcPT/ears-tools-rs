@@ -68,15 +68,16 @@ impl FaceOrientation {
 }
 
 #[derive(Debug)]
-struct PartTemplateGeneratorContext {
-    colors: HashMap<FaceOrientation, HSL>,
+pub(crate) struct PartTemplateGeneratorContext {
+    colors: HashMap<(FaceOrientation, PlayerBodyPartType), HSL>,
 }
 
 impl PartTemplateGeneratorContext {
     pub fn new() -> Self {
         let mut rng = rand::thread_rng();
 
-        let colors = FaceOrientation::iter()
+        let colors = PlayerBodyPartType::iter()
+            .flat_map(|p| FaceOrientation::iter().zip(repeat(p)))
             .map(|f| {
                 (
                     f,
@@ -90,6 +91,55 @@ impl PartTemplateGeneratorContext {
             .collect();
 
         Self { colors }
+    }
+
+    pub(crate) fn handle_part_texture(
+        &self,
+        body_part: PlayerBodyPartType,
+        part: Part,
+        part_texture: &mut RgbaImage,
+    ) {
+        match part {
+            Part::Cube { face_uvs, .. } => {
+                let uvs = [
+                    face_uvs.north,
+                    face_uvs.south,
+                    face_uvs.east,
+                    face_uvs.west,
+                    face_uvs.up,
+                    face_uvs.down,
+                ];
+
+                let orientations = [
+                    FaceOrientation::North,
+                    FaceOrientation::South,
+                    FaceOrientation::East,
+                    FaceOrientation::West,
+                    FaceOrientation::Up,
+                    FaceOrientation::Down,
+                ];
+
+                for (face_uv, orientation) in uvs.iter().zip(orientations.iter()) {
+                    handle_part_face(&self, body_part, *face_uv, *orientation, part_texture);
+                }
+            }
+            Part::Quad {
+                face_uv,
+                normal,
+                transformation,
+                ..
+            } => {
+                let orientation =
+                    FaceOrientation::from_normal(transformation.transform_vector3(normal));
+
+                handle_part_face(&self, body_part, face_uv, orientation, part_texture);
+            }
+            Part::Group { parts, .. } => {
+                for part in parts {
+                    Self::handle_part_texture(&self, body_part, part, part_texture);
+                }
+            }
+        }
     }
 }
 
@@ -155,7 +205,7 @@ fn main() -> JsResult<()> {
         for (part, body_part) in parts {
             let part_template_context = PartTemplateGeneratorContext::new();
 
-            handle_part_texture(&part_template_context, body_part, part, part_texture);
+            part_template_context.handle_part_texture(body_part, part, part_texture);
         }
 
         if texture == PlayerPartTextureType::Skin {
@@ -186,7 +236,11 @@ fn handle_part_face(
     let min = top_left.min(bottom_right);
     let max = top_left.max(bottom_right);
 
-    let Some(mut color) = part_template_context.colors.get(&orientation).copied() else {
+    let Some(mut color) = part_template_context
+        .colors
+        .get(&(orientation, part))
+        .copied()
+    else {
         return;
     };
 
@@ -203,76 +257,25 @@ fn handle_part_face(
     let max_y = max.y as u32;
     for x in min_x..max_x {
         for y in min_y..max_y {
-            if is_layer && (x != min_x && x != max_x - 1 && y != min_y && y != max_y - 1) {
-                continue;
-            }
+            let is_middle = x != min_x && x != max_x - 1 && y != min_y && y != max_y - 1;
 
             let (r, g, b) = color.to_rgb();
-            let a = if is_layer { 127 } else { 255 };
+            let a = if is_layer {
+                if is_middle {
+                    127
+                } else {
+                    255
+                }
+            } else {
+                255
+            };
 
             let color = image::Rgba([r, g, b, a]);
 
-            part_texture.put_pixel(x, y, color);
-        }
-    }
-}
-
-fn handle_part_texture(
-    part_template_context: &PartTemplateGeneratorContext,
-    body_part: PlayerBodyPartType,
-    part: Part,
-    part_texture: &mut RgbaImage,
-) {
-    match part {
-        Part::Cube { face_uvs, .. } => {
-            let uvs = [
-                face_uvs.north,
-                face_uvs.south,
-                face_uvs.east,
-                face_uvs.west,
-                face_uvs.up,
-                face_uvs.down,
-            ];
-
-            let orientations = [
-                FaceOrientation::North,
-                FaceOrientation::South,
-                FaceOrientation::East,
-                FaceOrientation::West,
-                FaceOrientation::Up,
-                FaceOrientation::Down,
-            ];
-
-            for (face_uv, orientation) in uvs.iter().zip(orientations.iter()) {
-                handle_part_face(
-                    part_template_context,
-                    body_part,
-                    *face_uv,
-                    *orientation,
-                    part_texture,
-                );
-            }
-        }
-        Part::Quad {
-            face_uv,
-            normal,
-            transformation,
-            ..
-        } => {
-            let orientation =
-                FaceOrientation::from_normal(transformation.transform_vector3(normal));
-
-            handle_part_face(
-                part_template_context,
-                body_part,
-                face_uv,
-                orientation,
-                part_texture,
-            );
-        }
-        Part::Group { parts, .. } => {
-            for part in parts {
-                handle_part_texture(part_template_context, body_part, part, part_texture);
+            if let Some(pixel) = part_texture.get_pixel_mut_checked(x, y) {
+                if pixel.0[3] == 0 {
+                    *pixel = color;
+                }
             }
         }
     }

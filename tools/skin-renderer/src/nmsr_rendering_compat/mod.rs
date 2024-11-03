@@ -11,6 +11,16 @@ pub mod high_level {
             pub use nmsr_rasterizer_test::{model::Size, shader::SunInformation};
         }
         pub type GraphicsContext = ();
+        pub type SceneContextWrapper = ();
+        
+        #[derive(Default)]
+        pub struct SceneContext();
+        
+        impl SceneContext {
+            pub fn new<T>(_ctx: T) -> Self {
+                Self {}
+            }
+        }
     }
     pub mod parts {
         pub use nmsr_player_parts::parts::*;
@@ -18,5 +28,5 @@ pub mod high_level {
 }
 
 pub mod low_level {
-    pub use glam::{Mat4, Vec3, Vec3A, EulerRot, Quat};
+    pub use glam::{Vec3, EulerRot, Quat};
 }

@@ -13,6 +13,8 @@ use wasm_bindgen::prelude::*;
 use crate::model::WasmEarsFeatures;
 
 mod model;
+
+#[cfg(feature = "template")]
 mod template;
 
 #[wasm_bindgen]
@@ -42,13 +44,18 @@ pub fn apply_features(skin_data: &[u8], features: JsValue) -> JsResult<Uint8Arra
     console_error_panic_hook::set_once();
 
     let wasm_features: WasmEarsFeatures = serde_wasm_bindgen::from_value(features)?;
+    
+    let mut skin_image = image::load_from_memory(skin_data)?.into_rgba8();
+    
+    #[cfg(feature = "template")]
+    {
+        template::apply_template(&mut skin_image, wasm_features.borrow())?;
+    }
 
     let features: EarsFeatures = wasm_features.clone().into();
     let emissive_palette: EarsEmissivePalette = wasm_features.borrow().into();
-    let alfalfa: AlfalfaData = wasm_features.into();
-
-    let mut skin_image = image::load_from_memory(skin_data)?.into_rgba8();
-
+    let alfalfa_data: AlfalfaData = wasm_features.into();
+    
     let writer = match features.data_version {
         0 => |image: &mut RgbaImage, features: &EarsFeatures| EarsWriterV0::write(image, features),
         _ => |image: &mut RgbaImage, features: &EarsFeatures| EarsWriterV1::write(image, features),
@@ -56,9 +63,13 @@ pub fn apply_features(skin_data: &[u8], features: JsValue) -> JsResult<Uint8Arra
     
     (writer)(&mut skin_image, &features)?;
 
-    alfalfa::write_alfalfa(&alfalfa, &mut skin_image)?;
+    if !alfalfa_data.is_empty() {
+        alfalfa::write_alfalfa(&alfalfa_data, &mut skin_image)?;
+    }
     
-    utils::write_emissive_palette(&mut skin_image, &emissive_palette)?;
+    if !emissive_palette.0.is_empty() {
+        utils::write_emissive_palette(&mut skin_image, &emissive_palette)?;
+    }
     
     let mut bytes = Vec::new();
     {

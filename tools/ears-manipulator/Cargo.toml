@@ -33,5 +33,9 @@ strum = { version = "0", features = ["derive"] }
 getrandom = { version = "0.2", features = ["js"] }
 itertools = "0.12.1"
 
+[features]
+default = []
+template = []
+
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ["-g", "--roundtrip"]

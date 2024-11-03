@@ -50,7 +50,6 @@ pub fn rotate_camera(
     
     #[cfg(feature = "software-rendering")]
     let front_lighting = front_lighting.into();
-    
 
     scene.sun_information_mut().direction = front_lighting;
 

@@ -109,15 +109,18 @@ use ears_rs::{
             wing::{WingData, WingMode},
         },
         EarsFeatures,
-    }, utils::EarsEmissivePalette,
+    },
+    utils::EarsEmissivePalette,
 };
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use strum::EnumIs;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmEarsMode {
+    #[default]
     None,
     Above,
     Sides,
@@ -199,9 +202,10 @@ pub(crate) enum WasmProtrusion {
     Horns,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmTailMode {
+    #[default]
     None,
     Down,
     Back,
@@ -233,9 +237,10 @@ impl From<TailMode> for WasmTailMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmWingsMode {
+    #[default]
     None,
     SymmetricDual,
     SymmetricSingle,
@@ -267,7 +272,7 @@ impl From<WingMode> for WasmWingsMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIs, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmTextureSource {
     SampleSkin,
@@ -281,9 +286,10 @@ pub(crate) enum WasmWingsAnimations {
     None,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub(crate) enum WasmSnoutStatus {
+    #[default]
     Disabled,
     Enabled,
 }
@@ -337,6 +343,7 @@ pub(crate) struct WasmTailSettings {
     pub(crate) mode: WasmTailMode,
     pub(crate) segments: u8,
     pub(crate) bends: [f32; 4],
+    pub(crate) source: WasmTextureSource,
 }
 
 impl From<WasmTailSettings> for TailData {
@@ -355,6 +362,7 @@ impl From<TailData> for WasmTailSettings {
             mode: data.mode.into(),
             segments: data.segments,
             bends: data.bends,
+            source: WasmTextureSource::SampleSkin,
         }
     }
 }
@@ -449,20 +457,26 @@ fn rbg_to_hex(image::Rgb([r, g, b]): image::Rgb<u8>) -> u32 {
 }
 
 fn hex_to_rgb(hex: u32) -> image::Rgb<u8> {
-    image::Rgb::from([((hex >> 16) & 0xFF) as u8, ((hex >> 8) & 0xFF) as u8, (hex & 0xFF) as u8])
+    image::Rgb::from([
+        ((hex >> 16) & 0xFF) as u8,
+        ((hex >> 8) & 0xFF) as u8,
+        (hex & 0xFF) as u8,
+    ])
 }
 
 impl WasmEarsFeatures {
     pub(crate) fn with_emissive(mut self, palette: Option<EarsEmissivePalette>) -> Self {
         self.emissives.palette.clear();
-    
+
         if let Some(emissive_pixels) = palette.as_ref().map(|p| p.0.clone()) {
-            self.emissives.palette.extend(emissive_pixels.into_iter().map(rbg_to_hex));
+            self.emissives
+                .palette
+                .extend(emissive_pixels.into_iter().map(rbg_to_hex));
         }
-        
+
         self
     }
-    
+
     pub(crate) fn with_alfalfa(self, alfalfa: Option<AlfalfaData>) -> Self {
         let wings = alfalfa
             .as_ref()
@@ -536,7 +550,6 @@ impl From<&WasmEarsFeatures> for EarsEmissivePalette {
     }
 }
 
-
 impl From<EarsFeatures> for WasmEarsFeatures {
     fn from(features: EarsFeatures) -> Self {
         Self {
@@ -560,6 +573,7 @@ impl From<EarsFeatures> for WasmEarsFeatures {
                 mode: WasmTailMode::None,
                 segments: 0,
                 bends: [0.0; 4],
+                source: WasmTextureSource::SampleSkin,
             }),
             snout: features.snout.map(|s| s.into()),
             wings: features.wing.map(|w| w.into()).unwrap_or(WasmWingSettings {

@@ -23,7 +23,7 @@ use nmsr_rasterizer_test::{
     shader::{ShaderState, SunInformation},
 };
 
-use crate::nmsr_rendering_compat::high_level::pipeline::GraphicsContext;
+use crate::nmsr_rendering_compat::high_level::pipeline::{GraphicsContext, SceneContext};
 
 pub struct Scene<M: ArmorMaterial> {
     camera: Camera,
@@ -64,9 +64,12 @@ impl<M: ArmorMaterial + Debug> Debug for Scene<M> {
 
 impl<M: ArmorMaterial + Debug> Scene<M> {
     pub fn new(
+        _ctx: &GraphicsContext,
+        _scene_ctx: SceneContext,
         mut camera: Camera,
         lighting: SunInformation,
         size: Size,
+        _part_context: &PlayerPartProviderContext<M>,
         parts: &[PlayerBodyPartType],
     ) -> Self {
         if let None = camera.get_size() {
@@ -86,6 +89,7 @@ impl<M: ArmorMaterial + Debug> Scene<M> {
 
     pub fn set_texture(
         &mut self,
+        _ctx: &GraphicsContext,
         texture: PlayerPartTextureType,
         image: Arc<RgbaImage>,
         parts_context: &PlayerPartProviderContext<M>,
