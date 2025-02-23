@@ -21,7 +21,7 @@ nmsr-rendering-blockbench-model-generator-experiment = { git = "https://github.c
 web-sys = { workspace = true, features = ["Window", "console"]}
 
 # This is here because some crate depends on it
-getrandom = { version = "0.2", features = ["js"] }
+getrandom = { workspace = true }
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = [

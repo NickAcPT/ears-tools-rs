@@ -18,17 +18,20 @@ nmsr-rendering = { git = "https://github.com/NickAcPT/nmsr-rs", default-features
 nmsr-software-rasterizer = { git = "https://github.com/NickAcPT/nmsr-rs", optional = true }
 nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 # web-sys has to be locked to 0.3.69 because otherwise, wgpu breaks
-web-sys = { version = "=0.3.69", features = ["HtmlCanvasElement"] }
+web-sys = { version = "=0.3.77", features = ["HtmlCanvasElement"] }
 # We're being spicy here by asking it to be send and sync..
-wgpu = { version = "22.0", features = [
+wgpu = { version = "24.0", features = [
     "fragile-send-sync-non-atomic-wasm",
 ], optional = true }
-winit = "0.29"
+
 js-utils = { workspace = true }
 wasm-bindgen-futures = "0.4.38"
 send_wrapper = "0.6.0"
 image = { version = "0", default-features = false, features = ["png"] }
-glam = "0.28"
+
+winit = { workspace = true }
+glam = { workspace = true }
+
 
 [features]
 default = ["ears", "nmsr-rendering/ears", "nmsr-software-rasterizer?/ears"]
@@ -42,71 +45,73 @@ software-rendering = [
 ears = ["nmsr-rendering/ears", "nmsr-player-parts/ears"]
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = [
-    "-lmu",
-    "--roundtrip",
-    "-Oz",
-    "--dce",
-    "--duplicate-import-elimination",
-    "--duplicate-function-elimination",
-    "--generate-global-effects",
-    "--memory-packing",
-    "--directize",
-    "--limit-segments",
-    "--once-reduction",
-    "--monomorphize",
-    "--const-hoisting",
-    "--abstract-type-refining",
-    "--optimize-added-constants-propagate",
-    "--optimize-instructions",
-    "--type-ssa",
-    "--strip-eh",
-    "--strip-debug",
-    "--strip-dwarf",
-    "--strip-producers",
-    "--signature-pruning",
-    "--rse",
-    "--gto",
-    "--remove-unused-names",
-    "--remove-unused-types",
-    "--remove-unused-module-elements",
-    "--remove-unused-nonfunction-module-elements",
-    "--remove-unused-brs",
-    "--vacuum",
-    "--merge-similar-functions",
-    "--local-cse",
-    "--gufa-optimizing",
-    "-tnh",
-    "-uim",
-    "--dae-optimizing",
-    "--code-pushing",
-    "--merge-locals",
-    "--coalesce-locals-learning",
-    "--untee",
-    "--type-merging",
-    "--simplify-locals-notee",
-    "--simplify-locals-nostructure",
-    "--simplify-locals-notee-nostructure",
-    "--simplify-globals-optimizing",
-    "--precompute",
-    "--precompute-propagate",
-    "--multi-memory-lowering",
-    "--merge-blocks",
-    "--licm",
-    "--inlining-optimizing",
-    "--code-folding",
-    "-cw",
-    "-ifwl",
-    "--optimize-stack-ir",
-    "--ssa",
-    "--optimize-for-js",
-    "--tuple-optimization",
-    "--unsubtyping",
-    "--cfp",
-    "--reorder-locals",
-    "--simplify-locals",
-    "-O4",
-    "--vacuum",
-    "--enable-nontrapping-float-to-int",
-    "-ffm",
-]
+wasm-opt = ["-g", "--roundtrip"]
+# wasm-opt = [
+#     #"-d",
+#     "-lmu",
+#     "--roundtrip",
+#     "-Oz",
+#     "--dce",
+#     "--duplicate-import-elimination",
+#     "--duplicate-function-elimination",
+#     "--generate-global-effects",
+#     "--memory-packing",
+#     "--directize",
+#     "--limit-segments",
+#     "--once-reduction",
+#     "--monomorphize",
+#     "--const-hoisting",
+#     "--abstract-type-refining",
+#     "--optimize-added-constants-propagate",
+#     "--optimize-instructions",
+#     "--type-ssa",
+#     "--strip-eh",
+#     "--strip-debug",
+#     "--strip-dwarf",
+#     "--strip-producers",
+#     "--signature-pruning",
+#     "--rse",
+#     "--gto",
+#     "--remove-unused-names",
+#     "--remove-unused-types",
+#     "--remove-unused-module-elements",
+#     "--remove-unused-nonfunction-module-elements",
+#     "--remove-unused-brs",
+#     "--vacuum",
+#     "--merge-similar-functions",
+#     "--local-cse",
+#     #"--gufa-optimizing",
+#     "-tnh",
+#     "-uim",
+#     "--dae-optimizing",
+#     "--code-pushing",
+#     "--merge-locals",
+#     "--coalesce-locals-learning",
+#     "--untee",
+#     "--type-merging",
+#     "--simplify-locals-notee",
+#     "--simplify-locals-nostructure",
+#     "--simplify-locals-notee-nostructure",
+#     "--simplify-globals-optimizing",
+#     "--precompute",
+#     "--precompute-propagate",
+#     "--multi-memory-lowering",
+#     "--merge-blocks",
+#     "--licm",
+#     "--inlining-optimizing",
+#     "--code-folding",
+#     "-cw",
+#     "-ifwl",
+#     "--optimize-stack-ir",
+#     "--ssa",
+#     "--optimize-for-js",
+#     "--tuple-optimization",
+#     "--unsubtyping",
+#     "--cfp",
+#     "--reorder-locals",
+#     "--simplify-locals",
+#     "-O4",
+#     "--vacuum",
+#     "--enable-nontrapping-float-to-int",
+#     "-ffm",
+# ]

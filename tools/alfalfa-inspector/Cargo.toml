@@ -20,7 +20,7 @@ serde = { workspace = true }
 serde-wasm-bindgen = { workspace = true }
 js-utils = { workspace = true }
 wasm-bindgen-futures = { workspace = true }
-image = { version = "0", default-features = false, features = ["png"] }
+image = { workspace = true, default-features = false, features = ["png"] }
 serde_bytes = { workspace = true }
 lol_alloc = { workspace = true }
 

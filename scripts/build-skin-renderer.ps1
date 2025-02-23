@@ -1,0 +1,1 @@
+$features = @("webgpu", "webgl", "software-rendering"); foreach ($feature in $features) { $command = "rustup run nightly wasm-pack build .\tools\skin-renderer\ --target web --out-name skin-renderer-$($feature.Split("-")[0])_wasm --features $($feature) "; Invoke-Expression $command; }

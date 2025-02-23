@@ -18,20 +18,20 @@ wasm-bindgen = { workspace = true }
 web-sys = { workspace = true }
 js-sys = { workspace = true }
 serde = { workspace = true }
-serde_repr = "0.1"
+serde_repr = { workspace = true }
 serde-wasm-bindgen = { workspace = true }
 js-utils = { workspace = true }
 wasm-bindgen-futures =  { workspace = true }
 image = { workspace = true, default-features = false, features = ["png"] }
-serde_bytes = "0"
-glam = "0.28"
+serde_bytes = { workspace = true }
+glam = { workspace = true }
 
 # Dependencies for template generation
-hsl = "0"
-rand = "0.8"
-strum = { version = "0", features = ["derive"] }
-getrandom = { version = "0.2", features = ["js"] }
-itertools = "0.12.1"
+hsl = { workspace = true }
+rand = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
+getrandom = { workspace = true }
+itertools = { workspace = true }
 
 [features]
 default = []
