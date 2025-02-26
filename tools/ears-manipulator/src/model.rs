@@ -211,6 +211,10 @@ pub(crate) enum WasmTailMode {
     Back,
     Up,
     Vertical,
+    Cross,
+    CrossOverlap,
+    Star,
+    StarOverlap,
 }
 
 impl From<WasmTailMode> for TailMode {
@@ -221,6 +225,10 @@ impl From<WasmTailMode> for TailMode {
             WasmTailMode::Back => TailMode::Back,
             WasmTailMode::Up => TailMode::Up,
             WasmTailMode::Vertical => TailMode::Vertical,
+            WasmTailMode::Cross => TailMode::Cross,
+            WasmTailMode::CrossOverlap => TailMode::CrossOverlap,
+            WasmTailMode::Star => TailMode::Star,
+            WasmTailMode::StarOverlap => TailMode::StarOverlap,
         }
     }
 }
@@ -233,6 +241,10 @@ impl From<TailMode> for WasmTailMode {
             TailMode::Back => WasmTailMode::Back,
             TailMode::Up => WasmTailMode::Up,
             TailMode::Vertical => WasmTailMode::Vertical,
+            TailMode::Cross => WasmTailMode::Cross,
+            TailMode::CrossOverlap => WasmTailMode::CrossOverlap,
+            TailMode::Star => WasmTailMode::Star,
+            TailMode::StarOverlap => WasmTailMode::StarOverlap,
         }
     }
 }
@@ -246,6 +258,8 @@ pub(crate) enum WasmWingsMode {
     SymmetricSingle,
     AsymmetricSingleLeft,
     AsymmetricSingleRight,
+    AsymmetricDual,
+    Flat,
 }
 
 impl From<WasmWingsMode> for WingMode {
@@ -256,6 +270,8 @@ impl From<WasmWingsMode> for WingMode {
             WasmWingsMode::SymmetricSingle => WingMode::SymmetricSingle,
             WasmWingsMode::AsymmetricSingleLeft => WingMode::AsymmetricL,
             WasmWingsMode::AsymmetricSingleRight => WingMode::AsymmetricR,
+            WasmWingsMode::AsymmetricDual => WingMode::AsymmetricDual,
+            WasmWingsMode::Flat => WingMode::Flat,
         }
     }
 }
@@ -268,6 +284,8 @@ impl From<WingMode> for WasmWingsMode {
             WingMode::SymmetricSingle => WasmWingsMode::SymmetricSingle,
             WingMode::AsymmetricL => WasmWingsMode::AsymmetricSingleLeft,
             WingMode::AsymmetricR => WasmWingsMode::AsymmetricSingleRight,
+            WingMode::AsymmetricDual => WasmWingsMode::AsymmetricDual,
+            WingMode::Flat => WasmWingsMode::Flat,
         }
     }
 }
@@ -527,10 +545,14 @@ impl From<WasmEarsFeatures> for AlfalfaData {
 
         if let Some(cape) = value.cape {
             alfalfa.set_data(AlfalfaDataKey::Cape, cape.to_vec());
+        } else {
+            alfalfa.remove_data(AlfalfaDataKey::Cape);
         }
 
         if let Some(wings) = value.wings.wings {
             alfalfa.set_data(AlfalfaDataKey::Wings, wings.to_vec());
+        } else {
+            alfalfa.remove_data(AlfalfaDataKey::Wings);
         }
 
         alfalfa

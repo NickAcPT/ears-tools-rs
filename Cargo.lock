@@ -639,7 +639,7 @@ dependencies = [
 [[package]]
 name = "ears-rs"
 version = "0.2.0"
-source = "git+https://github.com/NickAcPT/ears-rs#60e66cdf315a8842e517c08a984d1c2aab3f3825"
+source = "git+https://github.com/NickAcPT/ears-rs#07f5d4b32e432d8a339afb05d0684e2e167a0bd2"
 dependencies = [
  "byteorder",
  "enum-ordinalize",
@@ -771,8 +771,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a49c392881ce6d5c3b8cb70f98717b7c07aabbdff06687b9030dbfbe2725f8"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "wasi 0.13.3+wasi-0.2.2",
+ "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
 

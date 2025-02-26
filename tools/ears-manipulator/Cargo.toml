@@ -30,11 +30,11 @@ glam = { workspace = true }
 hsl = { workspace = true }
 rand = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
-getrandom = { workspace = true }
+getrandom = { workspace = true, features = ["wasm_js"] }
 itertools = { workspace = true }
 
 [features]
-default = []
+default = ["template"]
 template = []
 
 [package.metadata.wasm-pack.profile.release]

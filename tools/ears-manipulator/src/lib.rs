@@ -40,6 +40,27 @@ pub fn get_ears_features(skin_data: &[u8]) -> JsResult<JsValue> {
 }
 
 #[wasm_bindgen]
+pub fn get_template_skin(features: JsValue) -> JsResult<Uint8Array> {
+    console_error_panic_hook::set_once();
+
+    let wasm_features: WasmEarsFeatures = serde_wasm_bindgen::from_value(features)?;
+    
+    let mut skin_image = RgbaImage::new(64, 64);
+    
+    #[cfg(feature = "template")]
+    {
+        template::apply_template(&mut skin_image, wasm_features.borrow(), true)?;
+    }
+    
+    let mut bytes = Vec::new();
+    {
+        skin_image.write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)?;
+    }
+
+    Ok(Uint8Array::from(bytes.as_slice()))
+}
+
+#[wasm_bindgen]
 pub fn apply_features(skin_data: &[u8], features: JsValue) -> JsResult<Uint8Array> {
     console_error_panic_hook::set_once();
 
@@ -49,7 +70,7 @@ pub fn apply_features(skin_data: &[u8], features: JsValue) -> JsResult<Uint8Arra
     
     #[cfg(feature = "template")]
     {
-        template::apply_template(&mut skin_image, wasm_features.borrow())?;
+        template::apply_template(&mut skin_image, wasm_features.borrow(), false)?;
     }
 
     let features: EarsFeatures = wasm_features.clone().into();

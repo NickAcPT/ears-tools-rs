@@ -19,6 +19,7 @@ static mut PART_TEMPLATE_CONTEXT: Option<PartTemplateGeneratorContext> = None;
 pub(crate) fn apply_template(
     skin_image: &mut RgbaImage,
     wasm_features: &WasmEarsFeatures,
+    apply_only_minecraft_parts: bool,
 ) -> JsResult<()> {
     if let None = unsafe { PART_TEMPLATE_CONTEXT.as_ref() } {
         unsafe {
@@ -80,7 +81,8 @@ pub(crate) fn apply_template(
         ears_features: Some(features.into()),
     };
     
-    let parts = [PlayerPartsProvider::Ears]
+    let parts = if apply_only_minecraft_parts {[PlayerPartsProvider::Minecraft]} else {[PlayerPartsProvider::Ears]};
+    let parts = parts
         .iter()
         .flat_map(|provider| {
             PlayerBodyPartType::iter()
