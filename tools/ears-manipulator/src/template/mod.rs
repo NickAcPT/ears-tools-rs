@@ -65,6 +65,7 @@ pub(crate) fn apply_template(
             palette: Vec::with_capacity(0)
         },
         data_version: 1,
+        apply_template: wasm_features.apply_template
     };
 
     let context: PlayerPartProviderContext<()> = PlayerPartProviderContext {

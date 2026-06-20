@@ -1,0 +1,1 @@
+rustup run nightly wasm-pack build .\tools\ears-manipulator\ --target web --out-name ears_manipulator

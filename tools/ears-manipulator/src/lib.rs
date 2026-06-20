@@ -70,7 +70,9 @@ pub fn apply_features(skin_data: &[u8], features: JsValue) -> JsResult<Uint8Arra
     
     #[cfg(feature = "template")]
     {
-        template::apply_template(&mut skin_image, wasm_features.borrow(), false)?;
+        if wasm_features.apply_template  {
+            template::apply_template(&mut skin_image, wasm_features.borrow(), false)?;
+        }
     }
 
     let features: EarsFeatures = wasm_features.clone().into();

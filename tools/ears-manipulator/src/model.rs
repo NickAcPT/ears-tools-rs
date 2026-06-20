@@ -468,6 +468,7 @@ pub(crate) struct WasmEarsFeatures {
     pub(crate) alfalfa: Option<WasmAlfalfaData>,
     pub(crate) emissives: WasmEarsEmissiveData,
     pub(crate) data_version: u8,
+    pub(crate) apply_template: bool,
 }
 
 fn rbg_to_hex(image::Rgb([r, g, b]): image::Rgb<u8>) -> u32 {
@@ -612,6 +613,7 @@ impl From<EarsFeatures> for WasmEarsFeatures {
                 palette: vec![],
             },
             data_version: features.data_version,
+            apply_template: false,
         }
     }
 }
