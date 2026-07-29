@@ -9,7 +9,8 @@ rustflags = [
     "-Z",
     "threads=8",
     "-C",
-    "target-feature=+simd128,+relaxed-simd",
+    # iPad WebKit rejects relaxed-SIMD extended opcodes.
+    "target-feature=+simd128",
 ]
 
 [unstable]
