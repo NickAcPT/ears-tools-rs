@@ -36,15 +36,17 @@ console_error_panic_hook = "0.1"
 js-utils = { path = "tools/js-utils" }
 
 winit = "0.30"
-glam = "0.30"
+glam = "0.33"
 
 serde_repr = "0.1"
 
 hsl = "0"
-rand = "0.9"
-strum = { version = "0.27" }
-getrandom = { version = "0.3" }
-itertools = "0.14"
+rand = "0.10"
+strum = { version = "0.28" }
+getrandom = { version = "0.4", features = ["wasm_js"]}
+itertools = "0.15"
+
+uuid = { version = "1.24", features = ["rng-getrandom"] }
 
 [profile.release]
 opt-level = 3

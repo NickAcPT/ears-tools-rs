@@ -24,13 +24,14 @@ use nmsr_player_parts::{
 };
 
 #[cfg(not(feature = "software-rendering"))]
-use nmsr_rendering::high_level::pipeline::{
-    Features, GraphicsContext, GraphicsContextDescriptor,
-};
+use nmsr_rendering::high_level::pipeline::{Features, GraphicsContext, GraphicsContextDescriptor};
 use nmsr_rendering::{
     high_level::{
         camera::{Camera, CameraRotation, ProjectionParameters},
-        pipeline::{scene::{Scene, Size, SunInformation}, SceneContext, SceneContextWrapper},
+        pipeline::{
+            scene::{Scene, Size, SunInformation},
+            SceneContext, SceneContextWrapper,
+        },
     },
     low_level::Vec3,
 };
@@ -230,11 +231,12 @@ pub async fn setup_scene(
         has_deadmau5_ears: false,
         is_flipped_upside_down: false,
         has_cape: ears_features.is_some_and(|f| f.cape_enabled && model.has_cape),
-        arm_rotation: 10.0,
+        custom_arm_rotation_z: Some(10.0),
         shadow_y_pos: None,
         shadow_is_square: false,
         armor_slots: None,
         ears_features,
+        movement: Default::default(),
     };
 
     let parts: Vec<_> = PlayerBodyPartType::iter().into_iter().collect();
@@ -320,6 +322,41 @@ fn add_scene_texture(
 
             if texture_type == PlayerPartTextureType::Skin {
                 let emissive_palette = ears_rs::utils::extract_emissive_palette(&texture);
+                let ears_features = part_context.ears_features;
+
+                if let Some(features) = ears_features {
+                    if let Some(displaced_skin) =
+                        ears_rs::utils::extract_displaced_skin(&texture, &features)
+                    {
+                        if let Ok(Some(emissive_palette)) = &emissive_palette {
+                            let mut emissive_displaced_skin = displaced_skin.clone();
+                            if let Ok(emissive_displaced_skin) =
+                                ears_rs::utils::apply_emissive_palette(
+                                    &mut emissive_displaced_skin,
+                                    emissive_palette,
+                                )
+                            {
+                                add_scene_texture(
+                                    scene,
+                                    part_context,
+                                    PlayerPartEarsTextureType::EmissiveDisplacedSkin.into(),
+                                    emissive_displaced_skin,
+                                    false,
+                                    model,
+                                )?;
+                            }
+                        }
+
+                        add_scene_texture(
+                            scene,
+                            part_context,
+                            PlayerPartEarsTextureType::DisplacedSkin.into(),
+                            displaced_skin,
+                            false,
+                            model,
+                        )?;
+                    }
+                }
 
                 if let Ok(Some(alfalfa)) = ears_rs::alfalfa::read_alfalfa(&texture) {
                     if let Some(wings) = alfalfa.get_data(AlfalfaDataKey::Wings) {
@@ -327,10 +364,10 @@ fn add_scene_texture(
                             .expect_throw("Failed to load wings")
                             .to_rgba8();
 
-                        if let Ok(Some(ref emissive_palette)) = emissive_palette {
+                        if let Ok(Some(emissive_palette)) = &emissive_palette {
                             let emissive_wings = ears_rs::utils::apply_emissive_palette(
                                 &mut wings_texture,
-                                &emissive_palette,
+                                emissive_palette,
                             );
 
                             if let Ok(emissive_wings) = emissive_wings {
@@ -354,7 +391,7 @@ fn add_scene_texture(
                             model,
                         )?;
                     } else {
-                        // Clean-up invalid state with missing data for wings
+                        // Clean up invalid state with missing data for wings.
                         // This is a workaround.
                         if let Some(features) = part_context.ears_features.as_mut() {
                             features.wing.take();
@@ -373,15 +410,15 @@ fn add_scene_texture(
                             model,
                         )?;
                     } else {
-                        // Clean-up invalid state with missing data for cape
+                        // Clean up invalid state with missing data for cape.
                         // This is a workaround.
                         if let Some(features) = part_context.ears_features.as_mut() {
                             features.cape_enabled = false;
                         }
                     }
                 } else {
-                    // Clean-up invalid state with missing alfalfa data for wings and cape
-                    // No alfalfa means that there is no wings and/or cape
+                    // Clean up invalid state with missing alfalfa data for wings and cape.
+                    // No alfalfa means that there are no wings and/or cape.
                     // This is a workaround.
                     if let Some(features) = part_context.ears_features.as_mut() {
                         features.wing.take();
@@ -391,9 +428,9 @@ fn add_scene_texture(
 
                 ears_rs::utils::process_erase_regions(&mut texture)?;
 
-                if let Ok(Some(ref emissive_palette)) = &emissive_palette {
+                if let Ok(Some(emissive_palette)) = &emissive_palette {
                     if let Ok(emissive_skin) =
-                        ears_rs::utils::apply_emissive_palette(&mut texture, &emissive_palette)
+                        ears_rs::utils::apply_emissive_palette(&mut texture, emissive_palette)
                     {
                         add_scene_texture(
                             scene,
@@ -412,7 +449,20 @@ fn add_scene_texture(
     }
 
     if texture_type == PlayerPartTextureType::Skin {
-        ears_rs::utils::strip_alpha(&mut texture);
+        if do_ears_processing {
+            let features = part_context.ears_features.as_ref();
+            ears_rs::utils::strip_alpha_for_features(&mut texture, features);
+            if let Some(features) = features {
+                ears_rs::utils::apply_erase_displaced_regions(&mut texture, features)?;
+            }
+            if features
+                .is_some_and(|features| features.tail.is_some_and(|tail| tail.swap_jacket_back))
+            {
+                ears_rs::utils::swap_jacket_back_and_tail(&mut texture);
+            }
+        } else {
+            ears_rs::utils::strip_alpha(&mut texture);
+        }
     } else if texture_type == PlayerPartTextureType::Cape {
         part_context.has_cape = model.has_cape;
     }
@@ -431,7 +481,10 @@ fn add_scene_texture(
     );
 
     #[cfg(not(feature = "software-rendering"))]
-    scene.rebuild_parts(&part_context, PlayerBodyPartType::iter().collect());
+    scene.rebuild_parts(
+        &part_context,
+        &PlayerBodyPartType::iter().collect::<Vec<_>>(),
+    );
 
     Ok(())
 }
@@ -516,7 +569,7 @@ pub async fn render_frame() -> JsResult<()> {
                 .expect("Failed to create image data");
 
                 context
-                    .put_image_data(&image_data, 0 as f64, 0 as f64)
+                    .put_image_data(&image_data, 0, 0)
                     .expect("Failed to put image data");
             }
         }

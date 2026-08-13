@@ -47,23 +47,16 @@ pub fn rotate_camera(
 
     let light = Vec3::new(0.0, -6.21, 6.21);
     let front_lighting = rot_quat.mul_vec3(light) * Vec3::new(1.0, 1.0, -1.0);
-    
+
     #[cfg(feature = "software-rendering")]
     let front_lighting = front_lighting.into();
 
     scene.sun_information_mut().direction = front_lighting;
 
-    scene.update(
-        ctx,
-    );
+    scene.update(ctx);
 }
 
-pub fn handle_mouse_move(
-    scene: &mut SceneType,
-    ctx: &GraphicsContext,
-    x: f32,
-    y: f32,
-) {
+pub fn handle_mouse_move(scene: &mut SceneType, ctx: &GraphicsContext, x: f32, y: f32) {
     if unsafe { MOUSE_DOWN } {
         if let (Some(last_x), Some(last_y)) = unsafe { (LAST_X, LAST_Y) } {
             let x = x - last_x;
@@ -81,13 +74,7 @@ pub fn handle_mouse_move(
 
             pitch = pitch.clamp(-89.9, 89.9);
 
-            rotate_camera(
-                scene,
-                ctx,
-                yaw,
-                pitch,
-                *roll,
-            );
+            rotate_camera(scene, ctx, yaw, pitch, *roll);
         }
     }
 
@@ -109,11 +96,7 @@ pub fn handle_mouse_up() {
     }
 }
 
-pub fn handle_mouse_scroll(
-    scene: &mut SceneType,
-    ctx: &GraphicsContext,
-    delta: f32,
-) {
+pub fn handle_mouse_scroll(scene: &mut SceneType, ctx: &GraphicsContext, delta: f32) {
     let camera = scene.camera_mut();
 
     let dist = camera.get_distance_as_mut();
@@ -123,8 +106,6 @@ pub fn handle_mouse_scroll(
 
         *dist = dist.clamp(5.0, 90.0);
 
-        scene.update(
-            ctx,
-        );
+        scene.update(ctx);
     }
 }

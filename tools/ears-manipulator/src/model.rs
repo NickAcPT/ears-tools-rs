@@ -11,8 +11,8 @@ export interface WasmEarsFeatures {
     wings: WingSettings;
     cape?: Uint8Array;
     chestSize: number;
+    legMode: WasmLegMode;
     alfalfa?: WasmAlfalfaData;
-}
 
 export interface WasmAlfalfaData {
     version: number;
@@ -29,6 +29,8 @@ export interface WasmTailSettings {
     mode: TailMode;
     segments: 1 | 2 | 3 | 4;
     bends: number[];
+    animate: boolean;
+    swapJacketBack: boolean;
     source: TextureSource;
 }
 
@@ -73,7 +75,15 @@ export enum WasmEarsAnchor {
 
 export enum WasmProtrusion {
     Claws,
-    Horns
+    Horns,
+    Halo,
+    DoubleHalo,
+}
+
+export enum WasmLegMode {
+    Plantigrade,
+    DigitigradePartial,
+    DigitigradeFull,
 }
 
 export enum WasmTailMode {
@@ -94,7 +104,8 @@ export enum WasmWingsMode {
 
 export enum WasmWingsAnimations {
     Normal,
-    None
+    None,
+    NoFlight,
 } */
 
 use std::collections::HashMap;
@@ -104,11 +115,13 @@ use ears_rs::{
     features::{
         data::{
             ear::{EarAnchor, EarMode},
+            leg::LegMode,
+            protrusions::Protrusions,
             snout::SnoutData,
             tail::{TailData, TailMode},
-            wing::{WingData, WingMode},
+            wing::{WingAnimationMode, WingData, WingMode},
         },
-        EarsFeatures,
+        DataVersion, EarsFeatures,
     },
     utils::EarsEmissivePalette,
 };
@@ -200,6 +213,37 @@ impl From<EarAnchor> for WasmEarsAnchor {
 pub(crate) enum WasmProtrusion {
     Claws,
     Horns,
+    Halo,
+    DoubleHalo,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
+#[repr(u8)]
+pub(crate) enum WasmLegMode {
+    #[default]
+    Plantigrade,
+    DigitigradePartial,
+    DigitigradeFull,
+}
+
+impl From<WasmLegMode> for LegMode {
+    fn from(mode: WasmLegMode) -> Self {
+        match mode {
+            WasmLegMode::Plantigrade => LegMode::Plantigrade,
+            WasmLegMode::DigitigradePartial => LegMode::DigitigradePartial,
+            WasmLegMode::DigitigradeFull => LegMode::DigitigradeFull,
+        }
+    }
+}
+
+impl From<LegMode> for WasmLegMode {
+    fn from(mode: LegMode) -> Self {
+        match mode {
+            LegMode::Plantigrade => WasmLegMode::Plantigrade,
+            LegMode::DigitigradePartial => WasmLegMode::DigitigradePartial,
+            LegMode::DigitigradeFull => WasmLegMode::DigitigradeFull,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
@@ -302,6 +346,7 @@ pub(crate) enum WasmTextureSource {
 pub(crate) enum WasmWingsAnimations {
     Normal,
     None,
+    NoFlight,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize_repr, Serialize_repr)]
@@ -336,7 +381,11 @@ impl From<WasmWingSettings> for WingData {
                 .wings
                 .map(|_| settings.mode.into())
                 .unwrap_or(WingMode::None),
-            animated: settings.animations == WasmWingsAnimations::Normal,
+            animation_mode: match settings.animations {
+                WasmWingsAnimations::Normal => WingAnimationMode::Normal,
+                WasmWingsAnimations::None => WingAnimationMode::None,
+                WasmWingsAnimations::NoFlight => WingAnimationMode::NoFlight,
+            },
         }
     }
 }
@@ -345,10 +394,10 @@ impl From<WingData> for WasmWingSettings {
     fn from(data: WingData) -> Self {
         Self {
             mode: data.mode.into(),
-            animations: if data.animated {
-                WasmWingsAnimations::Normal
-            } else {
-                WasmWingsAnimations::None
+            animations: match data.animation_mode {
+                WingAnimationMode::Normal => WasmWingsAnimations::Normal,
+                WingAnimationMode::None => WasmWingsAnimations::None,
+                WingAnimationMode::NoFlight => WasmWingsAnimations::NoFlight,
             },
             wings: None,
             source: WasmTextureSource::SampleSkin,
@@ -361,6 +410,8 @@ pub(crate) struct WasmTailSettings {
     pub(crate) mode: WasmTailMode,
     pub(crate) segments: u8,
     pub(crate) bends: [f32; 4],
+    pub(crate) animate: bool,
+    pub(crate) swap_jacket_back: bool,
     pub(crate) source: WasmTextureSource,
 }
 
@@ -370,6 +421,8 @@ impl From<WasmTailSettings> for TailData {
             mode: settings.mode.into(),
             segments: settings.segments,
             bends: settings.bends,
+            animate: settings.animate,
+            swap_jacket_back: settings.swap_jacket_back,
         }
     }
 }
@@ -380,6 +433,8 @@ impl From<TailData> for WasmTailSettings {
             mode: data.mode.into(),
             segments: data.segments,
             bends: data.bends,
+            animate: data.animate,
+            swap_jacket_back: data.swap_jacket_back,
             source: WasmTextureSource::SampleSkin,
         }
     }
@@ -464,6 +519,7 @@ pub(crate) struct WasmEarsFeatures {
     pub(crate) snout: Option<WasmSnoutSettings>,
     pub(crate) wings: WasmWingSettings,
     pub(crate) cape: Option<ByteBuf>,
+    pub(crate) leg_mode: WasmLegMode,
     pub(crate) chest_size: f32,
     pub(crate) alfalfa: Option<WasmAlfalfaData>,
     pub(crate) emissives: WasmEarsEmissiveData,
@@ -527,13 +583,61 @@ impl From<WasmEarsFeatures> for ears_rs::features::EarsFeatures {
             tail: Some(features.tail.into()).filter(|_| features.tail.mode != WasmTailMode::None),
             snout: features.snout.map(|s| s.into()),
             wing: Some(features.wings.into()).filter(|w: &WingData| w.mode != WingMode::None),
-            claws: features.protrusions.contains(&WasmProtrusion::Claws),
-            horn: features.protrusions.contains(&WasmProtrusion::Horns),
+            protrusions: protrusions_from_wasm(&features.protrusions),
+            leg_mode: features.leg_mode.into(),
             chest_size: features.chest_size,
             cape_enabled: features.cape.is_some(),
             emissive: features.emissives.enabled,
-            data_version: features.data_version,
+            data_version: data_version_from_wasm(features.data_version),
         }
+    }
+}
+
+fn protrusions_from_wasm(protrusions: &[WasmProtrusion]) -> Protrusions {
+    let claws = protrusions.contains(&WasmProtrusion::Claws);
+    let double_halo = protrusions.contains(&WasmProtrusion::DoubleHalo);
+    let halo = !double_halo && protrusions.contains(&WasmProtrusion::Halo);
+    let horn = protrusions.contains(&WasmProtrusion::Horns);
+
+    match (claws, horn, halo, double_halo) {
+        (true, true, _, _) => Protrusions::ClawsAndHorn,
+        (true, false, _, true) => Protrusions::ClawsAndDoubleHalo,
+        (true, false, true, false) => Protrusions::ClawsAndHalo,
+        (true, false, false, false) => Protrusions::Claws,
+        (false, true, _, _) => Protrusions::Horn,
+        (false, false, _, true) => Protrusions::DoubleHalo,
+        (false, false, true, false) => Protrusions::Halo,
+        (false, false, false, false) => Protrusions::None,
+    }
+}
+
+fn protrusions_to_wasm(protrusions: Protrusions) -> Vec<WasmProtrusion> {
+    match protrusions {
+        Protrusions::None => vec![],
+        Protrusions::Horn => vec![WasmProtrusion::Horns],
+        Protrusions::Claws => vec![WasmProtrusion::Claws],
+        Protrusions::ClawsAndHorn => vec![WasmProtrusion::Claws, WasmProtrusion::Horns],
+        Protrusions::Halo => vec![WasmProtrusion::Halo],
+        Protrusions::DoubleHalo => vec![WasmProtrusion::DoubleHalo],
+        Protrusions::ClawsAndHalo => vec![WasmProtrusion::Claws, WasmProtrusion::Halo],
+        Protrusions::ClawsAndDoubleHalo => {
+            vec![WasmProtrusion::Claws, WasmProtrusion::DoubleHalo]
+        }
+    }
+}
+
+fn data_version_from_wasm(version: u8) -> DataVersion {
+    match version {
+        0 => DataVersion::V0,
+        version => DataVersion::V1(version),
+    }
+}
+
+fn data_version_to_wasm(version: DataVersion) -> u8 {
+    match version {
+        DataVersion::V0 => 0,
+        DataVersion::V1(version) => version,
+        DataVersion::Custom(version) => version.try_into().unwrap_or(u8::MAX),
     }
 }
 
@@ -582,20 +686,14 @@ impl From<EarsFeatures> for WasmEarsFeatures {
                 source: WasmTextureSource::SampleSkin,
             },
             protrusions_source: WasmTextureSource::SampleSkin,
-            protrusions: {
-                let mut protrusions = Vec::new();
-                if features.claws {
-                    protrusions.push(WasmProtrusion::Claws);
-                }
-                if features.horn {
-                    protrusions.push(WasmProtrusion::Horns);
-                }
-                protrusions
-            },
+            protrusions: protrusions_to_wasm(features.protrusions),
+            leg_mode: features.leg_mode.into(),
             tail: features.tail.map(|t| t.into()).unwrap_or(WasmTailSettings {
                 mode: WasmTailMode::None,
                 segments: 0,
                 bends: [0.0; 4],
+                animate: true,
+                swap_jacket_back: false,
                 source: WasmTextureSource::SampleSkin,
             }),
             snout: features.snout.map(|s| s.into()),
@@ -612,7 +710,7 @@ impl From<EarsFeatures> for WasmEarsFeatures {
                 enabled: features.emissive,
                 palette: vec![],
             },
-            data_version: features.data_version,
+            data_version: data_version_to_wasm(features.data_version),
             apply_template: false,
         }
     }

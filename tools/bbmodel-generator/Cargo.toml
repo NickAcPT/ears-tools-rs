@@ -22,6 +22,7 @@ web-sys = { workspace = true, features = ["Window", "console"]}
 
 # This is here because some crate depends on it
 getrandom = { workspace = true }
+uuid = { workspace = true }
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = [

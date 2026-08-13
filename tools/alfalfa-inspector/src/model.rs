@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use js_sys::{Object, Reflect};
 use js_utils::JsResult;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::{JsValue, JsError};
-
+use wasm_bindgen::{JsError, JsValue};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct AlfalfaEraseEntryData {
@@ -35,7 +34,8 @@ pub(crate) fn serialize_alfalfa_data_map(data: AlfalfaDataMap) -> JsResult<JsVal
     let obj = Object::new();
 
     for (key, data) in data {
-        Reflect::set(&obj, &key.into(), &serialize_alfalfa_entry_data(data)?).map_err(|_| JsError::new("Failed to set property 2"))?;
+        Reflect::set(&obj, &key.into(), &serialize_alfalfa_entry_data(data)?)
+            .map_err(|_| JsError::new("Failed to set property 2"))?;
     }
 
     Ok(obj.into())
@@ -43,8 +43,9 @@ pub(crate) fn serialize_alfalfa_data_map(data: AlfalfaDataMap) -> JsResult<JsVal
 
 pub(crate) fn deserialize_alfalfa_data_map(data: JsValue) -> JsResult<AlfalfaDataMap> {
     fn deserialize_alfalfa_entry_data(data: JsValue) -> JsResult<AlfalfaEntryData> {
-        let data = serde_wasm_bindgen::from_value(data).map_err(|_| JsError::new("Failed to deserialize data"))?;
-        
+        let data = serde_wasm_bindgen::from_value(data)
+            .map_err(|_| JsError::new("Failed to deserialize data"))?;
+
         Ok(data)
     }
 
@@ -55,7 +56,9 @@ pub(crate) fn deserialize_alfalfa_data_map(data: JsValue) -> JsResult<AlfalfaDat
         .map_err(|_| JsError::new("Failed to get keys"))?
         .iter()
     {
-        let key = js_key.as_string().ok_or_else(|| JsError::new("Invalid key"))?;
+        let key = js_key
+            .as_string()
+            .ok_or_else(|| JsError::new("Invalid key"))?;
         let value =
             Reflect::get(&data, &js_key).map_err(|_| JsError::new("Failed to get value"))?;
 

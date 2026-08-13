@@ -25,7 +25,7 @@ use nmsr_player_parts::{
     types::{PlayerBodyPartType, PlayerPartTextureType},
     IntoEnumIterator,
 };
-use rand::Rng;
+use rand::RngExt;
 use strum::EnumIter;
 
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq, EnumIter, Default)]
@@ -74,7 +74,7 @@ pub(crate) struct PartTemplateGeneratorContext {
 
 impl PartTemplateGeneratorContext {
     pub fn new() -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let colors = PlayerBodyPartType::iter()
             .flat_map(|p| FaceOrientation::iter().zip(repeat(p)))
@@ -82,7 +82,7 @@ impl PartTemplateGeneratorContext {
                 (
                     f,
                     hsl::HSL {
-                        h: rng.gen_range(0.0..=360.0),
+                        h: rng.random_range(0.0..=360.0),
                         s: 0.75,
                         l: 0.7,
                     },
@@ -159,8 +159,7 @@ fn main() -> JsResult<()> {
             depth: 2,
         }),
         wing: None,
-        claws: true,
-        horn: false,
+        protrusions: ears_rs::features::data::protrusions::Protrusions::Claws,
         chest_size: 0f32,
         cape_enabled: false,
         emissive: false,
@@ -174,11 +173,12 @@ fn main() -> JsResult<()> {
         has_deadmau5_ears: false,
         is_flipped_upside_down: false,
         has_cape: false,
-        arm_rotation: 0f32,
+        custom_arm_rotation_z: Some(0f32),
         shadow_y_pos: None,
         shadow_is_square: false,
         armor_slots: None,
         ears_features: Some(ears_features),
+        movement: Default::default(),
     };
 
     let parts = [PlayerPartsProvider::Ears]

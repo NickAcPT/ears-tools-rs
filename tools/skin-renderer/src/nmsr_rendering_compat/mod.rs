@@ -1,5 +1,5 @@
-mod model;
 pub mod camera;
+mod model;
 
 pub mod high_level {
     pub mod camera {
@@ -12,10 +12,10 @@ pub mod high_level {
         }
         pub type GraphicsContext = ();
         pub type SceneContextWrapper = ();
-        
+
         #[derive(Default)]
         pub struct SceneContext();
-        
+
         impl SceneContext {
             pub fn new<T>(_ctx: T) -> Self {
                 Self {}
@@ -28,5 +28,5 @@ pub mod high_level {
 }
 
 pub mod low_level {
-    pub use glam::{Vec3, EulerRot, Quat};
+    pub use glam::{EulerRot, Quat, Vec3};
 }

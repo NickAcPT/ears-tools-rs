@@ -115,7 +115,7 @@ impl<M: ArmorMaterial + Debug> Scene<M> {
             .map(|p| primitive_convert(&p))
             .collect::<Vec<_>>();
 
-        let value = ShaderState::new_with_primitive( 
+        let value = ShaderState::new_with_primitive(
             self.camera,
             image,
             texture.is_emissive(),
@@ -126,19 +126,19 @@ impl<M: ArmorMaterial + Debug> Scene<M> {
             },
             PrimitiveDispatch::Mesh(Mesh::new(parts)),
         );
-        
+
         self.shader_states.push(value);
     }
 
     pub fn update(&mut self, _ctx: &GraphicsContext) {
         for state in &mut self.shader_states {
             state.camera = self.camera;
-            state.sun = if state.emissive_texture { 
+            state.sun = if state.emissive_texture {
                 SunInformation::new(Vec3A::Y, 1.0, 1.0)
             } else {
                 self.lighting
             };
-            
+
             state.update();
         }
     }

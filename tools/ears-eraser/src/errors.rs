@@ -4,7 +4,7 @@ use thiserror::Error;
 pub enum RegionEraserError {
     #[error("Ears error: {0}")]
     EarsError(#[from] ears_rs::utils::errors::EarsError),
-    
+
     #[error("Image error: {0}")]
     ImageError(#[from] image::error::ImageError),
 }

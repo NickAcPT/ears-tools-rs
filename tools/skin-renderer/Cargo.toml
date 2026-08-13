@@ -18,11 +18,12 @@ nmsr-rendering = { git = "https://github.com/NickAcPT/nmsr-rs", default-features
 nmsr-software-rasterizer = { git = "https://github.com/NickAcPT/nmsr-rs", optional = true }
 nmsr-player-parts = { git = "https://github.com/NickAcPT/nmsr-rs" }
 # web-sys has to be locked to 0.3.69 because otherwise, wgpu breaks
-web-sys = { version = "=0.3.77", features = ["HtmlCanvasElement"] }
+web-sys = { version = "=0.3.100", features = ["HtmlCanvasElement"] }
 # We're being spicy here by asking it to be send and sync..
-wgpu = { version = "24.0", features = [
+wgpu = { version = "30.0", features = [
     "fragile-send-sync-non-atomic-wasm",
 ], optional = true }
+naga = { version = "30.0.0", optional = true }
 
 js-utils = { workspace = true }
 wasm-bindgen-futures = "0.4.38"
@@ -35,8 +36,8 @@ glam = { workspace = true }
 
 [features]
 default = ["ears", "nmsr-rendering/ears", "nmsr-software-rasterizer?/ears"]
-webgl = ["dep:wgpu", "wgpu/webgl", "nmsr-rendering/pipeline"]
-webgpu = ["dep:wgpu", "nmsr-rendering/pipeline"]
+webgl = ["dep:wgpu", "dep:naga", "wgpu/webgl", "naga/wgsl-in", "nmsr-rendering/pipeline"]
+webgpu = ["dep:wgpu", "dep:naga", "naga/wgsl-in", "nmsr-rendering/pipeline"]
 software-rendering = [
     "dep:nmsr-software-rasterizer",
     "web-sys/CanvasRenderingContext2d",
