@@ -1271,7 +1271,7 @@ dependencies = [
 [[package]]
 name = "nmsr-player-parts"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#dcff8e51bf83d74d1a69efbae9fe3f82cfff5efa"
+source = "git+https://github.com/NickAcPT/nmsr-rs#b7a43ee88e2ea05eda9d140f083fb82b11a2963d"
 dependencies = [
  "ears-rs",
  "glam",
@@ -1284,7 +1284,7 @@ dependencies = [
 [[package]]
 name = "nmsr-rendering"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#dcff8e51bf83d74d1a69efbae9fe3f82cfff5efa"
+source = "git+https://github.com/NickAcPT/nmsr-rs#b7a43ee88e2ea05eda9d140f083fb82b11a2963d"
 dependencies = [
  "async-trait",
  "bytemuck",
@@ -1307,7 +1307,7 @@ dependencies = [
 [[package]]
 name = "nmsr-rendering-blockbench-model-generator-experiment"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#dcff8e51bf83d74d1a69efbae9fe3f82cfff5efa"
+source = "git+https://github.com/NickAcPT/nmsr-rs#b7a43ee88e2ea05eda9d140f083fb82b11a2963d"
 dependencies = [
  "base64",
  "clap",
@@ -1329,7 +1329,7 @@ dependencies = [
 [[package]]
 name = "nmsr-software-rasterizer"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#dcff8e51bf83d74d1a69efbae9fe3f82cfff5efa"
+source = "git+https://github.com/NickAcPT/nmsr-rs#b7a43ee88e2ea05eda9d140f083fb82b11a2963d"
 dependencies = [
  "arrayvec",
  "ears-rs",
