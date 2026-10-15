@@ -40,6 +40,7 @@ pub fn read_alfalfa_data(data: &[u8]) -> JsResult<JsValue> {
 
             let entry_data = if key == Into::<&'static str>::into(AlfalfaDataKey::Cape)
                 || key == Into::<&'static str>::into(AlfalfaDataKey::Wings)
+                || key == Into::<&'static str>::into(AlfalfaDataKey::Locator)
             {
                 AlfalfaEntryData::Image(value)
             } else if key == Into::<&'static str>::into(AlfalfaDataKey::Erase) {
