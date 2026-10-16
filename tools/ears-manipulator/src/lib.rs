@@ -7,7 +7,7 @@ use ears_rs::{
     utils::{self, EarsEmissivePalette},
 };
 use image::{ImageFormat, RgbaImage};
-use js_sys::Uint8Array;
+use js_sys::{Array, Uint8Array};
 use js_utils::JsResult;
 use wasm_bindgen::prelude::*;
 
@@ -62,6 +62,44 @@ pub fn get_template_skin(features: JsValue, slim_arms: bool) -> JsResult<Uint8Ar
 }
 
 #[wasm_bindgen]
+pub fn get_locator_sprites(atlas_data: &[u8]) -> JsResult<Array> {
+    console_error_panic_hook::set_once();
+
+    let atlas = image::load_from_memory(atlas_data)?.into_rgba8();
+
+    let sprites = utils::extract_locator_sprites(&atlas).ok_or_else(|| {
+        JsError::new(&format!(
+            "Locator bar icons must be {}x{} pixels (got {}x{})",
+            utils::LOCATOR_ATLAS_WIDTH,
+            utils::LOCATOR_ATLAS_HEIGHT,
+            atlas.width(),
+            atlas.height()
+        ))
+    })?;
+
+    Ok(sprites.iter().map(|s| Uint8Array::from(s.as_raw().as_slice())).collect())
+}
+
+#[wasm_bindgen]
+pub fn tint_locator_atlas(atlas_data: &[u8], color: u32) -> JsResult<Uint8Array> {
+    console_error_panic_hook::set_once();
+
+    let mut atlas = image::load_from_memory(atlas_data)?.into_rgba8();
+    let [_, r, g, b] = color.to_be_bytes();
+
+    for pixel in atlas.pixels_mut() {
+        for (channel, tint) in pixel.0.iter_mut().zip([r, g, b]) {
+            *channel = ((*channel as u32 * tint as u32 + 127) / 255) as u8;
+        }
+    }
+
+    let mut bytes = Vec::new();
+    atlas.write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)?;
+
+    Ok(Uint8Array::from(bytes.as_slice()))
+}
+
+#[wasm_bindgen]
 pub fn apply_features(
     skin_data: &[u8],
     features: JsValue,
@@ -72,6 +110,7 @@ pub fn apply_features(
     let wasm_features: WasmEarsFeatures = serde_wasm_bindgen::from_value(features)?;
 
     let mut skin_image = image::load_from_memory(skin_data)?.into_rgba8();
+    let had_alfalfa = matches!(alfalfa::read_alfalfa(&skin_image), Ok(Some(_)));
 
     #[cfg(feature = "template")]
     {
@@ -95,7 +134,7 @@ pub fn apply_features(
 
     (writer)(&mut skin_image, &features)?;
 
-    if !alfalfa_data.is_empty() {
+    if had_alfalfa || !alfalfa_data.is_empty() {
         alfalfa::write_alfalfa(&alfalfa_data, &mut skin_image)?;
     }
 

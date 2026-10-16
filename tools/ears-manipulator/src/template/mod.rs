@@ -77,6 +77,7 @@ pub(crate) fn apply_template(
             wings: None,
         },
         cape: None,
+        locator: None,
         chest_size: wasm_features.chest_size,
         alfalfa: None,
         emissives: WasmEarsEmissiveData {

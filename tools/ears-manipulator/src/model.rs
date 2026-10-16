@@ -10,6 +10,7 @@ export interface WasmEarsFeatures {
     snout?: SnoutSettings;
     wings: WingSettings;
     cape?: Uint8Array;
+    locator?: Uint8Array;
     chestSize: number;
     legMode: WasmLegMode;
     alfalfa?: WasmAlfalfaData;
@@ -519,6 +520,7 @@ pub(crate) struct WasmEarsFeatures {
     pub(crate) snout: Option<WasmSnoutSettings>,
     pub(crate) wings: WasmWingSettings,
     pub(crate) cape: Option<ByteBuf>,
+    pub(crate) locator: Option<ByteBuf>,
     pub(crate) leg_mode: WasmLegMode,
     pub(crate) chest_size: f32,
     pub(crate) alfalfa: Option<WasmAlfalfaData>,
@@ -569,6 +571,9 @@ impl WasmEarsFeatures {
             cape: alfalfa
                 .as_ref()
                 .and_then(|a| a.get_data(AlfalfaDataKey::Cape).map(|w| ByteBuf::from(w))),
+            locator: alfalfa
+                .as_ref()
+                .and_then(|a| a.get_data(AlfalfaDataKey::Locator).map(|l| ByteBuf::from(l))),
             alfalfa: alfalfa.map(|a| a.into()),
             ..self
         }
@@ -660,6 +665,12 @@ impl From<WasmEarsFeatures> for AlfalfaData {
             alfalfa.remove_data(AlfalfaDataKey::Wings);
         }
 
+        if let Some(locator) = value.locator {
+            alfalfa.set_data(AlfalfaDataKey::Locator, locator.to_vec());
+        } else {
+            alfalfa.remove_data(AlfalfaDataKey::Locator);
+        }
+
         alfalfa
     }
 }
@@ -704,6 +715,7 @@ impl From<EarsFeatures> for WasmEarsFeatures {
                 source: WasmTextureSource::SampleSkin,
             }),
             cape: None,
+            locator: None,
             chest_size: features.chest_size,
             alfalfa: None,
             emissives: WasmEarsEmissiveData {
