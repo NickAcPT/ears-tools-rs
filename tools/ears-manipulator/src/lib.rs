@@ -53,10 +53,32 @@ pub fn get_template_skin(features: JsValue, slim_arms: bool) -> JsResult<Uint8Ar
         template::apply_template(&mut skin_image, wasm_features.borrow(), true, slim_arms)?;
     }
 
+    encode_png(&skin_image)
+}
+
+/// Sample wings texture laid out for `mode` (a `WingsMode` value).
+#[cfg(feature = "template")]
+#[wasm_bindgen]
+pub fn get_template_wings(mode: JsValue) -> JsResult<Uint8Array> {
+    console_error_panic_hook::set_once();
+
+    let mode: model::WasmWingsMode = serde_wasm_bindgen::from_value(mode)?;
+
+    encode_png(&template::wings_template(mode.into()))
+}
+
+/// Sample cape texture in the Ears cape layout.
+#[cfg(feature = "template")]
+#[wasm_bindgen]
+pub fn get_template_cape() -> JsResult<Uint8Array> {
+    console_error_panic_hook::set_once();
+
+    encode_png(&template::cape_template())
+}
+
+fn encode_png(image: &RgbaImage) -> JsResult<Uint8Array> {
     let mut bytes = Vec::new();
-    {
-        skin_image.write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)?;
-    }
+    image.write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)?;
 
     Ok(Uint8Array::from(bytes.as_slice()))
 }

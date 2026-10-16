@@ -19,7 +19,10 @@ use js_utils::JsResult;
 use nmsr_player_parts::{
     parts::{
         part::Part,
-        provider::{PartsProvider, PlayerPartProviderContext, PlayerPartsProvider},
+        provider::{
+            ears::PlayerPartEarsTextureType, PartsProvider, PlayerPartProviderContext,
+            PlayerPartsProvider,
+        },
         uv::{FaceUv, FaceUvPoint},
     },
     types::{PlayerBodyPartType, PlayerPartTextureType},
@@ -98,19 +101,42 @@ struct PartPalette {
 }
 
 impl PartPalette {
-    fn new(part: PlayerBodyPartType) -> Self {
+    fn new(part: PlayerBodyPartType, texture: PlayerPartTextureType) -> Self {
         use PlayerBodyPartType::*;
 
         // (hue, saturation multiplier); layers share the hue of their base part.
-        let (h, saturation) = match part {
-            Head | HeadLayer => (0.0, 0.0),
-            Body | BodyLayer => (220.0, 1.0),
-            RightArm | RightArmLayer => (0.0, 1.0),
-            LeftArm | LeftArmLayer => (55.0, 1.0),
-            RightLeg | RightLegLayer => (270.0, 1.0),
-            LeftLeg | LeftLegLayer => (150.0, 1.0),
+        // Wings and cape are provided for the body, but get their own colours.
+        let (h, saturation) = if texture == PlayerPartEarsTextureType::Wings.into() {
+            (320.0, 1.0)
+        } else if texture == PlayerPartTextureType::Cape {
+            (30.0, 1.0)
+        } else {
+            match part {
+                Head | HeadLayer => (0.0, 0.0),
+                Body | BodyLayer => (220.0, 1.0),
+                RightArm | RightArmLayer => (0.0, 1.0),
+                LeftArm | LeftArmLayer => (55.0, 1.0),
+                RightLeg | RightLegLayer => (270.0, 1.0),
+                LeftLeg | LeftLegLayer => (150.0, 1.0),
+            }
         };
 
+        Self::from_hue(h, saturation, part)
+    }
+
+    /// Ears quads drawn on the skin each get their own hue, picked from their texture position:
+    /// stepping by the golden ratio keeps nearby positions far apart on the colour wheel.
+    fn for_ears_quad(part: PlayerBodyPartType, uv: FaceUv) -> Self {
+        const GOLDEN_RATIO_CONJUGATE: f64 = 0.618_033_988_749_895;
+
+        let x = uv.top_left.x.min(uv.bottom_right.x);
+        let y = uv.top_left.y.min(uv.bottom_right.y);
+        let key = f64::from(x) + f64::from(y) * 64.0;
+
+        Self::from_hue((key * GOLDEN_RATIO_CONJUGATE).fract() * 360.0, 1.0, part)
+    }
+
+    fn from_hue(h: f64, saturation: f64, part: PlayerBodyPartType) -> Self {
         let color = |s: f64, l: f64, a: u8| {
             let (r, g, b) = HSL {
                 h,
@@ -123,14 +149,14 @@ impl PartPalette {
 
         if part.is_layer() || part.is_hat_layer() {
             Self {
-                border: color(0.55, 0.35, 255),
-                center: color(0.45, 0.45, 128),
+                border: color(0.65, 0.35, 255),
+                center: color(0.55, 0.45, 128),
                 glyph: Rgba([255, 255, 255, 255]),
             }
         } else {
             Self {
-                border: color(0.45, 0.45, 255),
-                center: color(0.30, 0.68, 255),
+                border: color(0.55, 0.45, 255),
+                center: color(0.40, 0.68, 255),
                 glyph: Rgba([0, 0, 0, 255]),
             }
         }
@@ -179,32 +205,57 @@ impl FaceTexels {
     }
 }
 
+/// Paints the template for `part` onto `image`, which holds the `texture` the part is drawn with.
+/// Parts drawn with other textures are skipped.
 pub(crate) fn apply_part_template(
     body_part: PlayerBodyPartType,
     part: &Part,
-    texture: &mut RgbaImage,
+    texture: PlayerPartTextureType,
+    image: &mut RgbaImage,
 ) {
-    let palette = PartPalette::new(body_part);
+    let palette = PartPalette::new(body_part, texture);
 
-    paint_part(&palette, part, Affine3A::IDENTITY, texture);
+    paint_part(body_part, &palette, part, texture, Affine3A::IDENTITY, image);
 }
 
-fn paint_part(palette: &PartPalette, part: &Part, parent: Affine3A, texture: &mut RgbaImage) {
+fn paint_part(
+    body_part: PlayerBodyPartType,
+    palette: &PartPalette,
+    part: &Part,
+    texture: PlayerPartTextureType,
+    parent: Affine3A,
+    image: &mut RgbaImage,
+) {
+    if !matches!(part, Part::Group { .. }) && part.get_texture() != texture {
+        return;
+    }
+
     match part {
-        Part::Cube { face_uvs, .. } => {
-            // UVs as seen when looking at each face, with the glyph corner at the bottom left.
+        Part::Cube {
+            face_uvs,
+            transformation,
+            ..
+        } => {
+            let transformation = parent * *transformation;
+
+            // UVs as seen when looking at each face, with the glyph corner at the bottom left,
+            // and each face's normal before the cube is transformed.
             let faces = [
-                (face_uvs.north, FaceOrientation::North),
-                (face_uvs.south, FaceOrientation::South),
-                (face_uvs.east, FaceOrientation::East),
-                (face_uvs.west, FaceOrientation::West),
-                (face_uvs.up, FaceOrientation::Up),
+                (face_uvs.north, Vec3::NEG_Z),
+                (face_uvs.south, Vec3::Z),
+                (face_uvs.east, Vec3::X),
+                (face_uvs.west, Vec3::NEG_X),
+                (face_uvs.up, Vec3::Y),
                 // Seen from below, the bottom face's texture is upside down (front edge on top).
-                (face_uvs.down.flip_vertically(), FaceOrientation::Down),
+                (face_uvs.down.flip_vertically(), Vec3::NEG_Y),
             ];
 
-            for (uv, orientation) in faces {
-                paint_face(palette, uv, orientation, texture);
+            for (uv, normal) in faces {
+                // Rotated cubes (like the cape) are labelled by where their faces point.
+                let orientation =
+                    FaceOrientation::from_normal(transformation.transform_vector3(normal));
+
+                paint_face(palette, uv, orientation, image);
             }
         }
         Part::Quad {
@@ -244,7 +295,12 @@ fn paint_part(palette: &PartPalette, part: &Part, parent: Affine3A, texture: &mu
                 uv = uv.rotate_cw();
             }
 
-            paint_face(palette, uv, orientation, texture);
+            // Wings keep their texture's colour; Ears parts on the skin are told apart per quad.
+            if texture == PlayerPartTextureType::Skin {
+                paint_face(&PartPalette::for_ears_quad(body_part, *face_uv), uv, orientation, image);
+            } else {
+                paint_face(palette, uv, orientation, image);
+            }
         }
         Part::Group {
             parts,
@@ -254,7 +310,7 @@ fn paint_part(palette: &PartPalette, part: &Part, parent: Affine3A, texture: &mu
             let transformation = parent * *transformation;
 
             for part in parts {
-                paint_part(palette, part, transformation, texture);
+                paint_part(body_part, palette, part, texture, transformation, image);
             }
         }
     }
@@ -364,7 +420,7 @@ fn main() -> JsResult<()> {
         });
 
         for (part, body_part) in parts {
-            apply_part_template(body_part, &part, part_texture);
+            apply_part_template(body_part, &part, texture, part_texture);
         }
 
         if texture == PlayerPartTextureType::Skin {
