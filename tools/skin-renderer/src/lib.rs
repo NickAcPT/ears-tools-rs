@@ -315,13 +315,24 @@ fn add_scene_texture(
     do_ears_processing: bool,
     model: &SceneCharacterSettings,
 ) -> JsResult<()> {
+    let mut emissive_palette = Ok(None);
+
     if do_ears_processing {
         {
             use ears_rs::alfalfa::AlfalfaDataKey;
             use nmsr_rendering::high_level::parts::provider::ears::PlayerPartEarsTextureType;
 
             if texture_type == PlayerPartTextureType::Skin {
-                let emissive_palette = ears_rs::utils::extract_emissive_palette(&texture);
+                let alfalfa = ears_rs::alfalfa::read_alfalfa(&texture);
+
+                if let Ok(Some(alfalfa)) = &alfalfa {
+                    if !alfalfa.is_empty() {
+                        ears_rs::utils::strip_alpha(&mut texture);
+                    }
+                    ears_rs::utils::apply_erase_regions(&mut texture, alfalfa)?;
+                }
+
+                emissive_palette = ears_rs::utils::extract_emissive_palette(&texture);
                 let ears_features = part_context.ears_features;
 
                 if let Some(features) = ears_features {
@@ -358,7 +369,7 @@ fn add_scene_texture(
                     }
                 }
 
-                if let Ok(Some(alfalfa)) = ears_rs::alfalfa::read_alfalfa(&texture) {
+                if let Ok(Some(alfalfa)) = &alfalfa {
                     if let Some(wings) = alfalfa.get_data(AlfalfaDataKey::Wings) {
                         let mut wings_texture = image::load_from_memory(wings)
                             .expect_throw("Failed to load wings")
@@ -425,23 +436,6 @@ fn add_scene_texture(
                         features.cape_enabled = false;
                     }
                 }
-
-                ears_rs::utils::process_erase_regions(&mut texture)?;
-
-                if let Ok(Some(emissive_palette)) = &emissive_palette {
-                    if let Ok(emissive_skin) =
-                        ears_rs::utils::apply_emissive_palette(&mut texture, emissive_palette)
-                    {
-                        add_scene_texture(
-                            scene,
-                            part_context,
-                            PlayerPartEarsTextureType::EmissiveSkin.into(),
-                            emissive_skin,
-                            false,
-                            model,
-                        )?;
-                    }
-                }
             } else if texture_type == PlayerPartEarsTextureType::Cape.into() {
                 texture = ears_rs::utils::convert_ears_cape_to_mojang_cape(texture);
             }
@@ -450,15 +444,32 @@ fn add_scene_texture(
 
     if texture_type == PlayerPartTextureType::Skin {
         if do_ears_processing {
-            let features = part_context.ears_features.as_ref();
-            ears_rs::utils::strip_alpha_for_features(&mut texture, features);
-            if let Some(features) = features {
+            let features = part_context.ears_features;
+            if let Some(features) = &features {
                 ears_rs::utils::apply_erase_displaced_regions(&mut texture, features)?;
             }
             if features
                 .is_some_and(|features| features.tail.is_some_and(|tail| tail.swap_jacket_back))
             {
                 ears_rs::utils::swap_jacket_back_and_tail(&mut texture);
+            }
+            ears_rs::utils::strip_alpha_for_features(&mut texture, features.as_ref());
+            if let Some(features) = &features {
+                ears_rs::utils::apply_erase_displaced_regions(&mut texture, features)?;
+            }
+            if let Ok(Some(emissive_palette)) = &emissive_palette {
+                if let Ok(emissive_skin) =
+                    ears_rs::utils::apply_emissive_palette(&mut texture, emissive_palette)
+                {
+                    add_scene_texture(
+                        scene,
+                        part_context,
+                        nmsr_rendering::high_level::parts::provider::ears::PlayerPartEarsTextureType::EmissiveSkin.into(),
+                        emissive_skin,
+                        false,
+                        model,
+                    )?;
+                }
             }
         } else {
             ears_rs::utils::strip_alpha(&mut texture);

@@ -630,7 +630,7 @@ dependencies = [
 [[package]]
 name = "ears-rs"
 version = "0.2.1"
-source = "git+https://github.com/NickAcPT/ears-rs#e2e891a486f4d429d323e74a5112c35fff36497b"
+source = "git+https://github.com/NickAcPT/ears-rs#382cca07bf8bf75c29976fb7a622a499eed94e07"
 dependencies = [
  "byteorder",
  "enum-ordinalize",
@@ -1258,7 +1258,7 @@ dependencies = [
 [[package]]
 name = "nmsr-player-parts"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#71739b1eeb04117e3edf8e8ff08a403297a6b308"
+source = "git+https://github.com/NickAcPT/nmsr-rs#275ee845ea82b1a74a2ff9876f5ccbf0acfd0ab9"
 dependencies = [
  "ears-rs",
  "glam",
@@ -1271,7 +1271,7 @@ dependencies = [
 [[package]]
 name = "nmsr-rendering"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#71739b1eeb04117e3edf8e8ff08a403297a6b308"
+source = "git+https://github.com/NickAcPT/nmsr-rs#275ee845ea82b1a74a2ff9876f5ccbf0acfd0ab9"
 dependencies = [
  "async-trait",
  "bytemuck",
@@ -1294,7 +1294,7 @@ dependencies = [
 [[package]]
 name = "nmsr-rendering-blockbench-model-generator-experiment"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#71739b1eeb04117e3edf8e8ff08a403297a6b308"
+source = "git+https://github.com/NickAcPT/nmsr-rs#275ee845ea82b1a74a2ff9876f5ccbf0acfd0ab9"
 dependencies = [
  "base64",
  "clap",
@@ -1316,7 +1316,7 @@ dependencies = [
 [[package]]
 name = "nmsr-software-rasterizer"
 version = "0.1.0"
-source = "git+https://github.com/NickAcPT/nmsr-rs#71739b1eeb04117e3edf8e8ff08a403297a6b308"
+source = "git+https://github.com/NickAcPT/nmsr-rs#275ee845ea82b1a74a2ff9876f5ccbf0acfd0ab9"
 dependencies = [
  "arrayvec",
  "ears-rs",
