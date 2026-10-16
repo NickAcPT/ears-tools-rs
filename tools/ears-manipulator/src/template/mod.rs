@@ -14,13 +14,11 @@ use crate::{
         WasmEarsEmissiveData, WasmEarsFeatures, WasmEarsSettings, WasmTailSettings,
         WasmWingSettings,
     },
-    template::model::PartTemplateGeneratorContext,
+    template::model::apply_part_template,
 };
 
 #[allow(dead_code)]
 mod model;
-
-static mut PART_TEMPLATE_CONTEXT: Option<PartTemplateGeneratorContext> = None;
 
 pub(crate) fn apply_template(
     skin_image: &mut RgbaImage,
@@ -28,13 +26,6 @@ pub(crate) fn apply_template(
     apply_only_minecraft_parts: bool,
     slim_arms: bool,
 ) -> JsResult<()> {
-    if let None = unsafe { PART_TEMPLATE_CONTEXT.as_ref() } {
-        unsafe {
-            PART_TEMPLATE_CONTEXT = Some(PartTemplateGeneratorContext::new());
-        }
-    }
-    let part_template_context = unsafe { PART_TEMPLATE_CONTEXT.as_ref().unwrap() };
-
     let features = WasmEarsFeatures {
         ears: WasmEarsSettings {
             anchor: wasm_features.ears.anchor,
@@ -121,7 +112,7 @@ pub(crate) fn apply_template(
         .collect::<Vec<_>>();
 
     for (part, body_part) in parts {
-        part_template_context.handle_part_texture(body_part, part, skin_image);
+        apply_part_template(body_part, &part, skin_image);
     }
 
     Ok(())

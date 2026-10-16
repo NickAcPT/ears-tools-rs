@@ -28,9 +28,7 @@ glam = { workspace = true }
 
 # Dependencies for template generation
 hsl = { workspace = true }
-rand = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
-getrandom = { workspace = true, features = ["wasm_js"] }
 itertools = { workspace = true }
 
 [features]
